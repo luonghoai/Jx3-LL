@@ -28,6 +28,36 @@ export async function GET(
   }
 }
 
+// POST - Create a new team member
+export async function POST(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    await connectDB()
+    const body = await request.json()
+    
+    // Create new team member with default values
+    const newTeamMember = new TeamMember({
+      ...body,
+      isActive: true,
+      joinDate: new Date(),
+      lastUpdated: new Date()
+    })
+    
+    const savedTeamMember = await newTeamMember.save()
+    
+    return NextResponse.json(savedTeamMember, { status: 201 })
+  } catch (error) {
+    console.error('Error creating team member:', error)
+    return NextResponse.json(
+      { error: 'Failed to create team member' },
+      { status: 500 }
+    )
+  }
+}
+
+
 // PUT - Update a team member
 export async function PUT(
   request: NextRequest,
@@ -37,9 +67,42 @@ export async function PUT(
     await connectDB()
     const body = await request.json()
     
+    // Validate required fields
+    if (!body.name || !body.roles || !body.classes) {
+      return NextResponse.json(
+        { error: 'Name, roles, and classes are required' },
+        { status: 400 }
+      )
+    }
+
+    // Validate arrays
+    if (!Array.isArray(body.roles) || body.roles.length === 0) {
+      return NextResponse.json(
+        { error: 'At least one role is required' },
+        { status: 400 }
+      )
+    }
+
+    if (!Array.isArray(body.classes) || body.classes.length === 0) {
+      return NextResponse.json(
+        { error: 'At least one class is required' },
+        { status: 400 }
+      )
+    }
+
+    // Prepare update data
+    const updateData = {
+      name: body.name.trim(),
+      discordUid: body.discordUid?.trim() || undefined,
+      roles: body.roles,
+      classes: body.classes,
+      avatar: body.avatar || undefined,
+      lastUpdated: new Date()
+    }
+    
     const teamMember = await TeamMember.findByIdAndUpdate(
       params.id,
-      { ...body, lastUpdated: new Date() },
+      updateData,
       { new: true, runValidators: true }
     )
     

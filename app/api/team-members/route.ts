@@ -23,7 +23,39 @@ export async function POST(request: NextRequest) {
     await connectDB()
     const body = await request.json()
     
-    const teamMember = new TeamMember(body)
+    // Validate required fields
+    if (!body.name || !body.roles || !body.classes) {
+      return NextResponse.json(
+        { error: 'Name, roles, and classes are required' },
+        { status: 400 }
+      )
+    }
+
+    // Validate arrays
+    if (!Array.isArray(body.roles) || body.roles.length === 0) {
+      return NextResponse.json(
+        { error: 'At least one role is required' },
+        { status: 400 }
+      )
+    }
+
+    if (!Array.isArray(body.classes) || body.classes.length === 0) {
+      return NextResponse.json(
+        { error: 'At least one class is required' },
+        { status: 400 }
+      )
+    }
+
+    // Create new team member
+    const teamMember = new TeamMember({
+      name: body.name.trim(),
+      discordUid: body.discordUid?.trim() || undefined,
+      roles: body.roles,
+      classes: body.classes,
+      avatar: body.avatar || undefined,
+      isActive: true
+    })
+    
     await teamMember.save()
     
     return NextResponse.json(teamMember, { status: 201 })

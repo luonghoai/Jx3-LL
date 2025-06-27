@@ -2,65 +2,40 @@ import mongoose, { Schema, Document } from 'mongoose';
 
 export interface ITeamMember extends Document {
   name: string;
-  email: string;
-  role: string;
-  department: string;
+  discordUid: string;
+  roles: string[];
+  classes: string[];
   avatar?: string;
-  discordId?: string;
-  discordUsername?: string;
-  discordNickname?: string;
   isActive: boolean;
-  joinDate: Date;
   lastUpdated: Date;
 }
 
 const TeamMemberSchema: Schema = new Schema({
   name: {
     type: String,
-    required: [true, 'Name is required'],
+    required: true,
     trim: true,
   },
-  email: {
+  discordUid: {
     type: String,
-    required: [true, 'Email is required'],
-    unique: true,
-    lowercase: true,
+    required: false,
     trim: true,
   },
-  role: {
+  roles: [{
     type: String,
-    required: [true, 'Role is required'],
-    trim: true,
-  },
-  department: {
+    required: true,
+  }],
+  classes: [{
     type: String,
-    required: [true, 'Department is required'],
-    trim: true,
-  },
+    required: true,
+  }],
   avatar: {
     type: String,
-    default: null,
-  },
-  // Discord integration fields (for future use)
-  discordId: {
-    type: String,
-    default: null,
-  },
-  discordUsername: {
-    type: String,
-    default: null,
-  },
-  discordNickname: {
-    type: String,
-    default: null,
+    required: false,
   },
   isActive: {
     type: Boolean,
     default: true,
-  },
-  joinDate: {
-    type: Date,
-    default: Date.now,
   },
   lastUpdated: {
     type: Date,
