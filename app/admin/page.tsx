@@ -812,8 +812,8 @@ function AdminPageContent() {
                     onChange={(e) => setParticipantSearch(e.target.value)}
                     className="mb-3"
                   />
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 max-h-40 overflow-y-auto border rounded p-2">
-                    {filteredMembers.map((member) => (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 max-h-80 overflow-y-auto border rounded p-2">
+                    {filteredParticipants.map((member) => (
                       <button
                         key={member._id}
                         onClick={() => handleAddParticipant(member)}

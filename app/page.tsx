@@ -6,7 +6,7 @@ import { Button } from '../components/ui/button'
 import { Card, CardContent } from '../components/ui/card'
 import { Input } from '../components/ui/input'
 import { Users, Settings, Search, Calendar, Clock, MapPin } from 'lucide-react'
-import { getClassIcon } from '@/lib/constants'
+import { getClassIcon, getClassValue } from '@/lib/constants'
 
 interface TeamMember {
   _id: string
@@ -265,7 +265,7 @@ export default function HomePage() {
                       </span>
                     )}
                   </div>
-                  <span>{participant.meetingRole} - {participant.meetingClass}</span>
+                  <span>{participant.meetingRole} - {getClassValue(participant.meetingClass as any)}</span>
                 </div>
                 <div className="card-socials">
                   {participant.allClasses.slice(0, 3).map((classCode, index) => (
