@@ -8,6 +8,9 @@ const inter = Inter({ subsets: ['latin'] })
 export const metadata: Metadata = {
   title: 'Lục Long',
   description: 'Team PVE 25 VN',
+  icons: {
+    icon: '/images/default.png',
+  },
 }
 
 export default function RootLayout({
