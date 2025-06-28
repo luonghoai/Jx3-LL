@@ -19,14 +19,28 @@ export default function LoginPage() {
     setIsLoading(true)
     setError('')
 
-    // Simple authentication - in production, use proper auth
-    if (credentials.username === 'admin' && credentials.password === 'admin123') {
-      // Set session/token
-      localStorage.setItem('isAuthenticated', 'true')
-      localStorage.setItem('user', credentials.username)
-      router.push('/admin')
-    } else {
-      setError('Invalid credentials. Use admin/admin123')
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(credentials),
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        // Set session/token
+        localStorage.setItem('isAuthenticated', 'true')
+        localStorage.setItem('user', credentials.username)
+        router.push('/admin')
+      } else {
+        setError(data.message || 'Invalid credentials.')
+      }
+    } catch (error) {
+      console.error('Login error:', error)
+      setError('An error occurred during login. Please try again.')
     }
     
     setIsLoading(false)

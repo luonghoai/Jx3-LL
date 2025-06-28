@@ -108,12 +108,40 @@ export const CLASS_ROLE_RELATIONSHIP: Record<ClassCode, Role[]> = {
 // Helper functions to get class info
 export const getClassValue = (code: ClassCode): ClassValue => {
   const classOption = CLASS_OPTIONS.find(c => c.code === code)
-  return classOption?.value || code
+  return classOption?.value || code as ClassValue
 }
 
 export const getClassCode = (value: ClassValue): ClassCode => {
   const classOption = CLASS_OPTIONS.find(c => c.value === value)
   return classOption?.code || value as ClassCode
+}
+
+export const getClassIcon = (classCode: ClassCode): string => {
+  // Map class codes to their corresponding icon files
+  const iconMap: Record<ClassCode, string> = {
+    'BD': '/logo/badao.png',
+    'DT': '/logo/beitianyaozong-dps.png',
+    'TV': '/logo/cangyun-dps.png',
+    'DM': '/logo/cangyun-wai.png',
+    'TCM': '/logo/changge-dps.png',
+    'TD': '/logo/chunyang-nei.png',
+    'TS': '/logo/tiance-dps.png',
+    'TK': '/logo/cangjian.png',
+    'CB': '/logo/gaibang.png',
+    'DT1': '/logo/daozong.png',
+    'DT2': '/logo/duanshi.png',
+    'LTC': '/logo/lingxuege.png',
+    'MG': '/logo/mingjiao-dps.png',
+    'BL': '/logo/penglai.png',
+    'TT': '/logo/qixiu-buff.png',
+    'TL': '/logo/shaolin-dps.png',
+    'VH': '/logo/wanhua-buff.png',
+    'ND': '/logo/wudu-buff.png',
+    'VL': '/logo/wanlingshanzhuang.png',
+    'DTT': '/logo/yantianzong.png'
+  }
+  
+  return iconMap[classCode] || '/icons/app-icon.svg' // fallback to app icon
 }
 
 export const getAvailableRolesForClass = (classCode: ClassCode): Role[] => {

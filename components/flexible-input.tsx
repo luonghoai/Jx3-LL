@@ -1,10 +1,8 @@
 'use client'
 
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState } from 'react'
 import { Input } from './ui/input'
-import { Button } from './ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
-import { Plus, X } from 'lucide-react'
 import { ROLE_OPTIONS, CLASS_OPTIONS, getClassValue, getClassCode } from '@/lib/constants'
 
 interface FlexibleInputProps {
@@ -20,7 +18,7 @@ export default function FlexibleInput({
   label,
   value,
   onChange,
-  placeholder = "Type or select...",
+  placeholder = "Nhập hoặc chọn...",
   options,
   className = ""
 }: FlexibleInputProps) {
@@ -52,7 +50,7 @@ export default function FlexibleInput({
       ) : (
         <Select value={value} onValueChange={handleSelectChange}>
           <SelectTrigger>
-            <SelectValue placeholder="Select an option" />
+            <SelectValue placeholder="Chọn một tùy chọn" />
           </SelectTrigger>
           <SelectContent>
             {options.map((option) => (
@@ -60,7 +58,7 @@ export default function FlexibleInput({
                 {option}
               </SelectItem>
             ))}
-            <SelectItem value="custom">Custom...</SelectItem>
+            <SelectItem value="custom">Tùy chỉnh...</SelectItem>
           </SelectContent>
         </Select>
       )}
@@ -76,7 +74,7 @@ export function RoleInput({ value, onChange, className }: { value: string; onCha
       value={value}
       onChange={onChange}
       options={[...ROLE_OPTIONS]}
-      placeholder="Enter role..."
+      placeholder="Nhập vai trò..."
       className={className}
     />
   )
@@ -88,7 +86,7 @@ export function ClassInput({ value, onChange, className }: { value: string; onCh
   
   const handleClassChange = (selectedValue: string) => {
     // If it's a custom value, use as is
-    if (!classDisplayOptions.includes(selectedValue)) {
+    if (!classDisplayOptions.includes(selectedValue as any)) {
       onChange(selectedValue)
       return
     }
@@ -107,7 +105,7 @@ export function ClassInput({ value, onChange, className }: { value: string; onCh
       value={displayValue}
       onChange={handleClassChange}
       options={[...classDisplayOptions]}
-      placeholder="Enter class..."
+      placeholder="Nhập môn phái..."
       className={className}
     />
   )

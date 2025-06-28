@@ -5,10 +5,10 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { X, RefreshCw, User, Hash } from 'lucide-react'
-import FlexibleInput from './flexible-input'
+import { Hash } from 'lucide-react'
 import { ROLE_OPTIONS, CLASS_OPTIONS, getAvailableRolesForClass, getAvailableClassesForRole, getClassValue, getClassCode } from '@/lib/constants'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { fetchDiscordUser, getDiscordAvatarUrl, getDiscordDisplayName, type DiscordUser } from '@/lib/discord'
 
 interface TeamMember {
   _id: string
@@ -23,13 +23,14 @@ interface TeamMember {
 interface MemberFormModalProps {
   isOpen: boolean
   onClose: () => void
-  onSave: (memberData: { name: string; discordUid?: string; roles: string[]; classes: string[] }) => void
+  onSave: (memberData: { name: string; discordUid?: string; roles: string[]; classes: string[]; avatar?: string }) => void
   editingMember?: {
     _id: string
     name: string
     discordUid?: string
     roles: string[]
     classes: string[]
+    avatar?: string
   } | null
 }
 
@@ -46,8 +47,11 @@ export default function MemberFormModal({
   const [roles, setRoles] = useState<string[]>([])
   const [classes, setClasses] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(false)
-  const [availableRoles, setAvailableRoles] = useState<string[]>(ROLE_OPTIONS)
+  const [availableRoles, setAvailableRoles] = useState<string[]>([...ROLE_OPTIONS])
   const [availableClasses, setAvailableClasses] = useState<string[]>(CLASS_OPTIONS.map(cls => cls.code))
+  const [discordUser, setDiscordUser] = useState<DiscordUser | null>(null)
+  const [discordError, setDiscordError] = useState<string | null>(null)
+  const [avatar, setAvatar] = useState<string>('')
 
   // Load member data when editing
   useEffect(() => {
@@ -56,12 +60,18 @@ export default function MemberFormModal({
       setDiscordUid(editingMember.discordUid || '')
       setRoles(editingMember.roles)
       setClasses(editingMember.classes)
+      setAvatar(editingMember.avatar || '')
+      setDiscordUser(null)
+      setDiscordError(null)
     } else {
       // Reset form when adding new member
       setName('')
       setDiscordUid('')
       setRoles([])
       setClasses([])
+      setAvatar('')
+      setDiscordUser(null)
+      setDiscordError(null)
     }
     setSelectedRole('')
     setSelectedClass('')
@@ -78,7 +88,7 @@ export default function MemberFormModal({
         setSelectedRole('')
       }
     } else {
-      setAvailableRoles(ROLE_OPTIONS)
+      setAvailableRoles([...ROLE_OPTIONS])
     }
 
     if (selectedRole) {
@@ -119,15 +129,15 @@ export default function MemberFormModal({
 
   const handleSave = () => {
     if (!name.trim()) {
-      alert('Name is required')
+      alert('Tên là bắt buộc')
       return
     }
     if (roles.length === 0) {
-      alert('At least one role is required')
+      alert('Ít nhất một vai trò là bắt buộc')
       return
     }
     if (classes.length === 0) {
-      alert('At least one class is required')
+      alert('Ít nhất một môn phái là bắt buộc')
       return
     }
 
@@ -135,7 +145,8 @@ export default function MemberFormModal({
       name: name.trim(),
       discordUid: discordUid.trim() || undefined,
       roles,
-      classes
+      classes,
+      avatar: avatar || undefined
     })
     handleClose()
   }
@@ -147,32 +158,60 @@ export default function MemberFormModal({
     setSelectedClass('')
     setRoles([])
     setClasses([])
+    setAvatar('')
+    setDiscordUser(null)
+    setDiscordError(null)
     onClose()
   }
 
   const handleDiscordSync = async () => {
+    if (!discordUid.trim()) {
+      setDiscordError('Vui lòng nhập UID Discord trước')
+      return
+    }
+
     setIsLoading(true)
+    setDiscordError(null)
+    
     try {
-      // Mock Discord API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      const result = await fetchDiscordUser(discordUid.trim())
       
-      // Mock Discord data
-      const mockDiscordData = {
-        name: 'Discord User',
-        discordUid: 'discord_123456',
-        roles: ['DPS'],
-        classes: ['TS']
+      if (result.success && result.data) {
+        const user = result.data
+        setDiscordUser(user)
+        setName(getDiscordDisplayName(user))
+        setDiscordUid(user.id)
+        
+        // Store Discord avatar URL
+        if (user.avatar) {
+          const avatarUrl = getDiscordAvatarUrl(user.id, user.avatar, 256)
+          setAvatar(avatarUrl || '')
+        } else {
+          setAvatar('')
+        }
+        
+        setDiscordError(null)
+      } else {
+        setDiscordError(result.error || 'Không thể tải thông tin Discord')
+        setDiscordUser(null)
+        setAvatar('')
       }
-      
-      setName(mockDiscordData.name)
-      setDiscordUid(mockDiscordData.discordUid)
-      setRoles(mockDiscordData.roles)
-      setClasses(mockDiscordData.classes)
     } catch (error) {
-      alert('Failed to sync with Discord')
+      console.error('Discord sync error:', error)
+      setDiscordError('Không thể đồng bộ với Discord. Vui lòng thử lại.')
+      setDiscordUser(null)
+      setAvatar('')
     } finally {
       setIsLoading(false)
     }
+  }
+
+  // Get avatar URL for preview
+  const getAvatarUrl = () => {
+    if (discordUser?.avatar) {
+      return getDiscordAvatarUrl(discordUser.id, discordUser.avatar, 64)
+    }
+    return null
   }
 
   if (!isOpen) return null
@@ -181,50 +220,76 @@ export default function MemberFormModal({
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <Card className="w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
         <CardHeader>
-          <CardTitle>{editingMember ? 'Edit Member' : 'Add Team Member'}</CardTitle>
+          <CardTitle>{editingMember ? 'Sửa thành viên' : 'Thêm thành viên'}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Discord UID Section */}
-          <div className="border border-blue-200 bg-blue-50 rounded p-4 mb-2 flex items-center gap-3">
-            <Hash className="h-5 w-5 text-blue-600" />
-            <div className="flex-1">
-              <label className="block text-sm font-semibold text-blue-800 mb-1">Discord UID</label>
-              <div className="flex gap-2">
-                <Input
-                  value={discordUid}
-                  onChange={(e) => setDiscordUid(e.target.value)}
-                  placeholder="Discord UID (optional)"
-                  className="flex-1"
-                />
-                <Button
-                  onClick={handleDiscordSync}
-                  disabled={isLoading}
-                  variant="outline"
-                  size="sm"
-                >
-                  {isLoading ? 'Syncing...' : 'Sync'}
-                </Button>
+          <div className="border border-blue-200 bg-blue-50 rounded p-4 mb-2">
+            <div className="flex items-center gap-3 mb-3">
+              <Hash className="h-5 w-5 text-blue-600" />
+              <div className="flex-1">
+                <label className="block text-sm font-semibold text-blue-800 mb-1">Discord UID</label>
+                <div className="flex gap-2">
+                  <Input
+                    value={discordUid}
+                    onChange={(e) => setDiscordUid(e.target.value)}
+                    placeholder="UID Discord (ví dụ: 123456789012345678)"
+                    className="flex-1"
+                  />
+                  <Button
+                    onClick={handleDiscordSync}
+                    disabled={isLoading}
+                    variant="outline"
+                    size="sm"
+                  >
+                    {isLoading ? 'Đồng bộ...' : 'Đồng bộ'}
+                  </Button>
+                </div>
               </div>
             </div>
+            
+            {/* Discord User Preview */}
+            {discordUser && (
+              <div className="flex items-center gap-3 p-3 bg-white rounded border">
+                <Avatar className="h-10 w-10">
+                  <AvatarImage src={getAvatarUrl() || undefined} />
+                  <AvatarFallback className="text-xs">
+                    {discordUser.username.split(' ').map(n => n[0]).join('')}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1">
+                  <div className="font-medium text-sm">{getDiscordDisplayName(discordUser)}</div>
+                  <div className="text-xs text-gray-600">@{discordUser.username}</div>
+                </div>
+                <div className="text-xs text-green-600 font-medium">✓ Đã kết nối</div>
+              </div>
+            )}
+            
+            {/* Discord Error */}
+            {discordError && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded text-sm text-red-700">
+                {discordError}
+              </div>
+            )}
           </div>
 
           {/* Name Field */}
           <div>
-            <label className="block text-sm font-medium mb-2">Name *</label>
+            <label className="block text-sm font-medium mb-2">Tên *</label>
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Member name"
+              placeholder="Tên thành viên"
             />
           </div>
 
           {/* Roles Field */}
           <div>
-            <label className="block text-sm font-medium mb-2">Roles *</label>
+            <label className="block text-sm font-medium mb-2">Vai trò *</label>
             <div className="mb-2">
               <Select value={selectedRole} onValueChange={handleRoleChange}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select a role to add" />
+                  <SelectValue placeholder="Chọn vai trò để thêm" />
                 </SelectTrigger>
                 <SelectContent>
                   {availableRoles.map((role) => (
@@ -255,11 +320,11 @@ export default function MemberFormModal({
 
           {/* Classes Field */}
           <div>
-            <label className="block text-sm font-medium mb-2">Classes *</label>
+            <label className="block text-sm font-medium mb-2">Môn phái *</label>
             <div className="mb-2">
               <Select value={selectedClass} onValueChange={handleClassChange}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select a class to add" />
+                  <SelectValue placeholder="Chọn môn phái để thêm" />
                 </SelectTrigger>
                 <SelectContent>
                   {availableClasses.map((classCode) => (
@@ -290,10 +355,10 @@ export default function MemberFormModal({
 
           <div className="flex gap-2 pt-4">
             <Button onClick={handleSave} className="flex-1">
-              {editingMember ? 'Update' : 'Add'} Member
+              {editingMember ? 'Cập nhật' : 'Thêm'} thành viên
             </Button>
             <Button onClick={handleClose} variant="outline" className="flex-1">
-              Cancel
+              Hủy
             </Button>
           </div>
         </CardContent>

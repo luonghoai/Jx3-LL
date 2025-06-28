@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { getClassValue } from '@/lib/constants'
 import { Plus, X, Edit } from 'lucide-react'
 
@@ -27,7 +26,7 @@ export default function GuestManager({ guests, onAddGuest, onRemoveGuest, onUpda
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-medium">Temporary Guests ({guests.length})</h3>
+        <h3 className="text-sm font-medium">Khách mời ({guests.length})</h3>
         <Button
           onClick={onAddGuest}
           size="sm"
@@ -35,7 +34,7 @@ export default function GuestManager({ guests, onAddGuest, onRemoveGuest, onUpda
           className="text-orange-600 border-orange-300 hover:bg-orange-50"
         >
           <Plus className="h-3 w-3 mr-1" />
-          Add Guest
+          Thêm khách mời
         </Button>
       </div>
 
@@ -68,7 +67,7 @@ export default function GuestManager({ guests, onAddGuest, onRemoveGuest, onUpda
         ))}
         {guests.length === 0 && (
           <div className="text-center py-4 text-gray-500 text-sm">
-            No temporary guests added
+            Không có khách mời đã thêm
           </div>
         )}
       </div>

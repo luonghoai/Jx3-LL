@@ -40,12 +40,22 @@ export default function MemberRoleModal({
   onSave,
   initialRole = '',
   initialClass = '',
-  title = 'Set Meeting Role & Class'
+  title = 'Đặt vai trò và môn phái'
 }: MemberRoleModalProps) {
-  const [selectedRole, setSelectedRole] = useState(initialRole)
-  const [selectedClass, setSelectedClass] = useState(initialClass)
-  const [availableRoles, setAvailableRoles] = useState<string[]>(ROLE_OPTIONS)
+  const [selectedRole, setSelectedRole] = useState('')
+  const [selectedClass, setSelectedClass] = useState('')
+  const [availableRoles, setAvailableRoles] = useState<string[]>([...ROLE_OPTIONS])
   const [availableClasses, setAvailableClasses] = useState<string[]>(CLASS_OPTIONS.map(cls => cls.code))
+
+  // Reset to defaults when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setSelectedRole('')
+      setSelectedClass('')
+      setAvailableRoles([...ROLE_OPTIONS])
+      setAvailableClasses(CLASS_OPTIONS.map(cls => cls.code))
+    }
+  }, [isOpen])
 
   // Update available options based on selection
   useEffect(() => {
@@ -60,7 +70,7 @@ export default function MemberRoleModal({
         setSelectedRole('')
       }
     } else {
-      setAvailableRoles(ROLE_OPTIONS)
+      setAvailableRoles([...ROLE_OPTIONS])
     }
 
     if (selectedRole) {
@@ -85,8 +95,8 @@ export default function MemberRoleModal({
   }
 
   const handleClose = () => {
-    setSelectedRole(initialRole)
-    setSelectedClass(initialClass)
+    setSelectedRole('')
+    setSelectedClass('')
     onClose()
   }
 
@@ -100,10 +110,10 @@ export default function MemberRoleModal({
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-2">Role</label>
+            <label className="block text-sm font-medium mb-2">Vai trò</label>
             <Select value={selectedRole} onValueChange={setSelectedRole}>
               <SelectTrigger>
-                <SelectValue placeholder="Select a role" />
+                <SelectValue placeholder="Chọn vai trò" />
               </SelectTrigger>
               <SelectContent>
                 {availableRoles.map((role) => (
@@ -116,10 +126,10 @@ export default function MemberRoleModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">Class</label>
+            <label className="block text-sm font-medium mb-2">Môn phái</label>
             <Select value={selectedClass} onValueChange={setSelectedClass}>
               <SelectTrigger>
-                <SelectValue placeholder="Select a class" />
+                <SelectValue placeholder="Chọn môn phái" />
               </SelectTrigger>
               <SelectContent>
                 {availableClasses.map((classCode) => (
@@ -137,10 +147,10 @@ export default function MemberRoleModal({
               disabled={!selectedRole || !selectedClass}
               className="flex-1"
             >
-              Save
+              Lưu
             </Button>
             <Button onClick={handleClose} variant="outline" className="flex-1">
-              Cancel
+              Hủy
             </Button>
           </div>
         </CardContent>

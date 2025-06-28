@@ -6,26 +6,17 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { ArrowLeft, Plus, Edit, Trash2, Save, X, Users, MessageSquare, Swords, User, Calendar, CheckSquare, Square, Search } from 'lucide-react'
+import { ArrowLeft, Plus, Edit, Trash2, X, Users, MessageSquare, Swords, Calendar, Search } from 'lucide-react'
 import AuthGuard from '@/components/auth-guard'
-import FlexibleInput from '@/components/flexible-input'
 import GuestManager from '@/components/guest-manager'
 import MemberRoleModal from '@/components/member-role-modal'
 import MemberFormModal from '@/components/member-form-modal'
 import GuestFormModal from '@/components/guest-form-modal'
 import { 
-  MEETING_STATUS, 
-  ROLE_OPTIONS, 
-  CLASS_OPTIONS, 
-  MEETING_STATUS_CONFIG,
   MEETING_FILTER_OPTIONS,
-  ERROR_MESSAGES,
-  SUCCESS_MESSAGES,
-  type MeetingStatus,
   type MeetingFilterOption,
   getClassValue,
 } from '@/lib/constants'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 interface TeamMember {
   _id: string
@@ -33,6 +24,7 @@ interface TeamMember {
   discordUid?: string
   roles: string[]
   classes: string[]
+  avatar?: string
   isActive: boolean
   createdAt: string
   updatedAt: string
@@ -54,6 +46,7 @@ interface TemporaryGuest {
   classes: string[]
   meetingRole: string
   meetingClass: string
+  avatar?: string
 }
 
 interface MeetingRequest {
@@ -69,57 +62,6 @@ interface MeetingRequest {
   createdAt: string
   updatedAt: string
 }
-
-// Mock data - moved outside component to avoid setState during render
-const generateMockData = (): TeamMember[] => [
-  {
-    _id: '1',
-    name: 'John Doe',
-    discordUid: 'john.doe@company.com',
-    roles: ['Senior Developer', 'Tech Lead'],
-    classes: ['Engineering', 'Product'],
-    isActive: true,
-    createdAt: '',
-    updatedAt: '',
-  },
-  {
-    _id: '2',
-    name: 'Jane Smith',
-    discordUid: 'jane.smith@company.com',
-    roles: ['Product Manager', 'Scrum Master'],
-    classes: ['Product', 'Agile'],
-    isActive: true,
-    createdAt: '',
-    updatedAt: '',
-  },
-  {
-    _id: '3',
-    name: 'Mike Johnson',
-    discordUid: 'mike.johnson@company.com',
-    roles: ['UX Designer', 'UI Developer'],
-    classes: ['Design', 'Engineering'],
-    isActive: true,
-    createdAt: '',
-    updatedAt: '',
-  },
-  // Add more mock data to reach 25 members
-  ...Array.from({ length: 22 }, (_, i) => ({
-    _id: String(i + 4),
-    name: `Team Member ${i + 4}`,
-    discordUid: `member${i + 4}@company.com`,
-    roles: [
-      ['Developer', 'Code Reviewer'][i % 2],
-      ['Designer', 'Analyst'][i % 2]
-    ],
-    classes: [
-      ['Engineering', 'Design'][i % 2],
-      ['Product', 'Marketing'][i % 2]
-    ],
-    isActive: true,
-    createdAt: '',
-    updatedAt: '',
-  })),
-]
 
 function AdminPageContent() {
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
@@ -169,7 +111,7 @@ function AdminPageContent() {
   // Team Members pagination and search
   const [memberSearch, setMemberSearch] = useState('')
   const [memberCurrentPage, setMemberCurrentPage] = useState(1)
-  const memberItemsPerPage = 5
+  const memberItemsPerPage = 25
 
   // Filter and sort team members
   const filteredMembers = teamMembers
@@ -200,7 +142,7 @@ function AdminPageContent() {
       setError(null)
       const response = await fetch('/api/team-members')
       if (!response.ok) {
-        throw new Error('Failed to fetch team members')
+        throw new Error('Không thể tải danh sách thành viên')
       }
       const data = await response.json()
       setTeamMembers(data)
@@ -218,7 +160,7 @@ function AdminPageContent() {
   }, [])
 
   // Update CRUD functions to use API
-  const handleAddMember = async (memberData: { name: string; discordUid?: string; roles: string[]; classes: string[] }) => {
+  const handleAddMember = async (memberData: { name: string; discordUid?: string; roles: string[]; classes: string[]; avatar?: string }) => {
     try {
       const response = await fetch('/api/team-members', {
         method: 'POST',
@@ -230,7 +172,7 @@ function AdminPageContent() {
 
       if (!response.ok) {
         const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to create team member')
+        throw new Error(errorData.error || 'Không thể tạo thành viên')
       }
 
       const newMember = await response.json()
@@ -238,12 +180,12 @@ function AdminPageContent() {
       setShowMemberModal(false)
       setEditingMember(null)
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to create team member')
+      alert(err instanceof Error ? err.message : 'Không thể tạo thành viên')
       console.error('Error creating team member:', err)
     }
   }
 
-  const handleUpdateMember = async (memberData: { name: string; discordUid?: string; roles: string[]; classes: string[] }) => {
+  const handleUpdateMember = async (memberData: { name: string; discordUid?: string; roles: string[]; classes: string[]; avatar?: string }) => {
     if (!editingMember) return
     
     try {
@@ -257,7 +199,7 @@ function AdminPageContent() {
 
       if (!response.ok) {
         const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to update team member')
+        throw new Error(errorData.error || 'Không thể cập nhật thành viên')
       }
 
       const updatedMember = await response.json()
@@ -269,13 +211,13 @@ function AdminPageContent() {
       setShowMemberModal(false)
       setEditingMember(null)
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to update team member')
+      alert(err instanceof Error ? err.message : 'Không thể cập nhật thành viên')
       console.error('Error updating team member:', err)
     }
   }
 
   const handleDeleteMember = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this team member?')) return
+    if (!confirm('Bạn có chắc chắn muốn xóa thành viên này không?')) return
     
     try {
       const response = await fetch(`/api/team-members/${id}`, {
@@ -284,7 +226,7 @@ function AdminPageContent() {
 
       if (!response.ok) {
         const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to delete team member')
+        throw new Error(errorData.error || 'Không thể xóa thành viên')
       }
 
       setTeamMembers(prev => 
@@ -293,7 +235,7 @@ function AdminPageContent() {
         )
       )
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to delete team member')
+      alert(err instanceof Error ? err.message : 'Không thể xóa thành viên')
       console.error('Error deleting team member:', err)
     }
   }
@@ -308,7 +250,7 @@ function AdminPageContent() {
       title: '',
       description: '',
       date: tomorrow.toISOString().split('T')[0],
-      time: '09:00',
+      time: '21:00',
       participants: [] as MeetingParticipant[],
       temporaryGuests: [] as TemporaryGuest[]
     }
@@ -321,12 +263,12 @@ function AdminPageContent() {
       setMeetingError(null)
       const response = await fetch('/api/meeting-requests')
       if (!response.ok) {
-        throw new Error('Failed to fetch meeting requests')
+        throw new Error('Không thể tải lịch bí cảnh')
       }
       const data = await response.json()
       setMeetingRequests(data)
     } catch (err) {
-      setMeetingError(err instanceof Error ? err.message : 'An error occurred')
+      setMeetingError(err instanceof Error ? err.message : 'Lỗi khi tải lịch bí cảnh')
       console.error('Error fetching meeting requests:', err)
     } finally {
       setMeetingLoading(false)
@@ -346,11 +288,11 @@ function AdminPageContent() {
     if (!meetingForm.date) missingFields.push('Date')
     if (!meetingForm.time) missingFields.push('Time')
     if (meetingForm.participants.length === 0 && meetingForm.temporaryGuests.length === 0) {
-      missingFields.push('At least one participant or guest')
+      missingFields.push('Ít nhất một thành viên hoặc khách mời')
     }
     
     if (missingFields.length > 0) {
-      alert(`Please fill in the following required fields: ${missingFields.join(', ')}`)
+      alert(`Vui lòng điền các trường bắt buộc: ${missingFields.join(', ')}`)
       return
     }
 
@@ -372,7 +314,7 @@ function AdminPageContent() {
 
       if (!response.ok) {
         const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to create meeting request')
+        throw new Error(errorData.error || 'Không thể tạo lịch bí cảnh')
       }
 
       const newMeeting = await response.json()
@@ -388,7 +330,7 @@ function AdminPageContent() {
         temporaryGuests: [],
       })
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to create meeting request')
+      alert(err instanceof Error ? err.message : 'Không thể tạo lịch bí cảnh')
       console.error('Error creating meeting request:', err)
     }
   }
@@ -405,7 +347,7 @@ function AdminPageContent() {
 
       if (!response.ok) {
         const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to confirm meeting')
+        throw new Error(errorData.error || 'Không thể xác nhận lịch bí cảnh')
       }
 
       const updatedMeeting = await response.json()
@@ -414,14 +356,60 @@ function AdminPageContent() {
           meeting._id === meetingId ? updatedMeeting : meeting
         )
       )
+
+      // Send Discord notification
+      try {
+        // Collect all Discord UIDs from participants and guests
+        const discordUids: string[] = []
+        
+        // Add participant Discord UIDs
+        updatedMeeting.participants.forEach((participant: MeetingParticipant) => {
+          if (participant.discordUid) {
+            discordUids.push(participant.discordUid)
+          }
+        })
+        
+        // Add guest Discord UIDs
+        updatedMeeting.temporaryGuests.forEach((guest: TemporaryGuest) => {
+          if (guest.discordUid) {
+            discordUids.push(guest.discordUid)
+          }
+        })
+
+        // Send Discord webhook if there are Discord UIDs
+        if (discordUids.length > 0) {
+          const webhookResponse = await fetch('/api/discord/webhook', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              meetingTitle: updatedMeeting.title,
+              meetingDescription: updatedMeeting.description,
+              meetingDate: updatedMeeting.date,
+              meetingTime: updatedMeeting.time,
+              discordUids: discordUids
+            }),
+          })
+
+          if (!webhookResponse.ok) {
+            console.error('Failed to send Discord notification:', webhookResponse.statusText)
+          } else {
+            console.log('Discord notification sent successfully')
+          }
+        }
+      } catch (webhookError) {
+        console.error('Error sending Discord notification:', webhookError)
+        // Don't throw error here as the meeting was already confirmed successfully
+      }
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to confirm meeting')
+      alert(err instanceof Error ? err.message : 'Không thể xác nhận lịch bí cảnh')
       console.error('Error confirming meeting:', err)
     }
   }
 
   const handleCancelMeeting = async (meetingId: string) => {
-    if (!confirm('Are you sure you want to cancel this meeting request?')) return
+    if (!confirm('Bạn có chắc chắn muốn hủy lịch bí cảnh này không?')) return
     
     try {
       const response = await fetch(`/api/meeting-requests/${meetingId}`, {
@@ -434,7 +422,7 @@ function AdminPageContent() {
 
       if (!response.ok) {
         const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to cancel meeting')
+        throw new Error(errorData.error || 'Không thể hủy lịch bí cảnh')
       }
 
       const updatedMeeting = await response.json()
@@ -444,7 +432,7 @@ function AdminPageContent() {
         )
       )
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to cancel meeting')
+      alert(err instanceof Error ? err.message : 'Không thể hủy lịch bí cảnh')
       console.error('Error canceling meeting:', err)
     }
   }
@@ -469,7 +457,7 @@ function AdminPageContent() {
   const handleAddParticipant = (member: TeamMember) => {
     const totalMembers = meetingForm.participants.length + meetingForm.temporaryGuests.length
     if (totalMembers >= 25) {
-      alert('Maximum 25 members (including guests) allowed per meeting')
+      alert('Tối đa 25 thành viên (bao gồm khách mời) cho mỗi lịch bí cảnh')
       return
     }
     setSelectedMember(member)
@@ -515,10 +503,10 @@ function AdminPageContent() {
     }
   }
 
-  const handleAddGuest = (guestData: { name: string; discordUid?: string; roles: string[]; classes: string[] }) => {
+  const handleAddGuest = (guestData: { name: string; discordUid?: string; roles: string[]; classes: string[]; avatar?: string }) => {
     const totalMembers = meetingForm.participants.length + meetingForm.temporaryGuests.length
     if (totalMembers >= 25) {
-      alert('Maximum 25 members (including guests) allowed per meeting')
+      alert('Tối đa 25 thành viên (bao gồm khách mời) cho mỗi lịch bí cảnh')
       return
     }
     const newGuest: TemporaryGuest = {
@@ -528,7 +516,8 @@ function AdminPageContent() {
       roles: guestData.roles,
       classes: guestData.classes,
       meetingRole: guestData.roles[0] || '',
-      meetingClass: guestData.classes[0] || ''
+      meetingClass: guestData.classes[0] || '',
+      avatar: guestData.avatar,
     }
     setMeetingForm(prev => ({
       ...prev,
@@ -576,14 +565,14 @@ function AdminPageContent() {
           <Link href="/">
             <Button variant="ghost" className="mb-4">
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Home
+              Quay lại trang chủ
             </Button>
           </Link>
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
+              <h1 className="text-3xl font-bold text-gray-900">Bảng điều khiển Admin</h1>
               <p className="text-gray-600 mt-2">
-                Manage team members and meeting requests
+                Quản lý thành viên và lịch bí cảnh
               </p>
             </div>
           </div>
@@ -597,7 +586,7 @@ function AdminPageContent() {
             className="flex-1"
           >
             <Users className="h-4 w-4 mr-2" />
-            Team Members
+            Thành viên
           </Button>
           <Button
             variant={activeTab === 'meetings' ? 'default' : 'ghost'}
@@ -605,7 +594,7 @@ function AdminPageContent() {
             className="flex-1"
           >
             <Calendar className="h-4 w-4 mr-2" />
-            Meeting Requests
+            Lịch bí cảnh
           </Button>
         </div>
 
@@ -618,7 +607,7 @@ function AdminPageContent() {
                 <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                 <Input
                   type="text"
-                  placeholder="Search by name, Discord UID, role, or class..."
+                  placeholder="Tìm kiếm theo tên, UID Discord, vai trò, hoặc lớp..."
                   value={memberSearch}
                   onChange={(e) => setMemberSearch(e.target.value)}
                   className="pl-10"
@@ -630,7 +619,7 @@ function AdminPageContent() {
             {loading && (
               <div className="text-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                <p className="mt-2 text-gray-600">Loading team members...</p>
+                <p className="mt-2 text-gray-600">Đang tải thành viên...</p>
               </div>
             )}
 
@@ -639,13 +628,13 @@ function AdminPageContent() {
               <div className="bg-red-50 border border-red-200 rounded-md p-4 mb-6">
                 <div className="flex">
                   <div className="text-red-800">
-                    <p className="font-medium">Error loading team members</p>
+                    <p className="font-medium">Lỗi khi tải thành viên</p>
                     <p className="text-sm">{error}</p>
                     <button 
                       onClick={fetchTeamMembers}
                       className="mt-2 text-sm text-red-600 hover:text-red-800 underline"
                     >
-                      Try again
+                      Thử lại
                     </button>
                   </div>
                 </div>
@@ -656,17 +645,17 @@ function AdminPageContent() {
             {!loading && !error && (
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-xl font-semibold">Team Members ({filteredMembers.length})</h2>
+                  <h2 className="text-xl font-semibold">Thành viên ({filteredMembers.length})</h2>
                   <Button onClick={() => setShowMemberModal(true)}>
                     <Plus className="h-4 w-4 mr-2" />
-                    Add Member
+                    Thêm thành viên
                   </Button>
                 </div>
 
                 {filteredMembers.length === 0 ? (
                   <div className="text-center py-8">
                     <p className="text-gray-600">
-                      {memberSearch ? 'No team members found matching your search.' : 'No team members found.'}
+                      {memberSearch ? 'Không tìm thấy thành viên phù hợp với tìm kiếm của bạn.' : 'Không tìm thấy thành viên.'}
                     </p>
                   </div>
                 ) : (
@@ -676,11 +665,7 @@ function AdminPageContent() {
                         <CardHeader className="pb-4">
                           <div className="flex items-center space-x-4">
                             <Avatar className="h-12 w-12">
-                              {member.discordUid ? (
-                                <AvatarImage src={`https://cdn.discordapp.com/avatars/${member.discordUid}/avatar.png`} />
-                              ) : (
-                                <AvatarImage src="/images/default.png" />
-                              )}
+                              <AvatarImage src={member.avatar || "/images/default.png"} />
                               <AvatarFallback>
                                 {member.name.split(' ').map(n => n[0]).join('')}
                               </AvatarFallback>
@@ -708,7 +693,7 @@ function AdminPageContent() {
                               className="flex-1"
                             >
                               <Edit className="h-3 w-3 mr-1" />
-                              Edit
+                              Sửa
                             </Button>
                             <Button
                               size="sm"
@@ -717,7 +702,7 @@ function AdminPageContent() {
                               className="flex-1 text-red-600 hover:text-red-700"
                             >
                               <Trash2 className="h-3 w-3 mr-1" />
-                              Delete
+                              Xóa
                             </Button>
                           </div>
                         </CardContent>
@@ -739,7 +724,7 @@ function AdminPageContent() {
                         onClick={() => setMemberCurrentPage(prev => Math.max(prev - 1, 1))}
                         disabled={memberCurrentPage === 1}
                       >
-                        Previous
+                        Trước
                       </Button>
                       
                       <div className="flex items-center space-x-1">
@@ -762,7 +747,7 @@ function AdminPageContent() {
                         onClick={() => setMemberCurrentPage(prev => Math.min(prev + 1, memberTotalPages))}
                         disabled={memberCurrentPage === memberTotalPages}
                       >
-                        Next
+                        Tiếp
                       </Button>
                     </div>
                   </div>
@@ -778,20 +763,20 @@ function AdminPageContent() {
             {/* Meeting Request Form */}
             <Card>
               <CardHeader>
-                <CardTitle>Create New Meeting Request</CardTitle>
+                <CardTitle>Tạo lịch bí cảnh mới</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium mb-2">Title</label>
+                    <label className="block text-sm font-medium mb-2">Tiêu đề</label>
                     <Input
                       value={meetingForm.title}
                       onChange={(e) => setMeetingForm(prev => ({ ...prev, title: e.target.value }))}
-                      placeholder="Meeting title"
+                      placeholder="Tiêu đề lịch bí cảnh"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-2">Date</label>
+                    <label className="block text-sm font-medium mb-2">Ngày</label>
                     <Input
                       type="date"
                       value={meetingForm.date}
@@ -801,7 +786,7 @@ function AdminPageContent() {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium mb-2">Time</label>
+                    <label className="block text-sm font-medium mb-2">Thời gian</label>
                     <Input
                       type="time"
                       value={meetingForm.time}
@@ -809,20 +794,20 @@ function AdminPageContent() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-2">Description</label>
+                    <label className="block text-sm font-medium mb-2">Mô tả</label>
                     <Input
                       value={meetingForm.description}
                       onChange={(e) => setMeetingForm(prev => ({ ...prev, description: e.target.value }))}
-                      placeholder="Meeting description"
+                      placeholder="Mô tả lịch bí cảnh"
                     />
                   </div>
                 </div>
 
                 {/* Participant Selection */}
                 <div>
-                  <label className="block text-sm font-medium mb-2">Select Participants</label>
+                  <label className="block text-sm font-medium mb-2">Chọn thành viên</label>
                   <Input
-                    placeholder="Search members..."
+                    placeholder="Tìm kiếm thành viên..."
                     value={participantSearch}
                     onChange={(e) => setParticipantSearch(e.target.value)}
                     className="mb-3"
@@ -840,11 +825,7 @@ function AdminPageContent() {
                         }`}
                       >
                         <Avatar className="h-6 w-6 flex-shrink-0">
-                          {member.discordUid ? (
-                            <AvatarImage src={`https://cdn.discordapp.com/avatars/${member.discordUid}/avatar.png`} />
-                          ) : (
-                            <AvatarImage src="/images/default.png" />
-                          )}
+                          <AvatarImage src={member.avatar || "/images/default.png"} />
                           <AvatarFallback className="text-xs">
                             {member.name.split(' ').map(n => n[0]).join('')}
                           </AvatarFallback>
@@ -862,18 +843,14 @@ function AdminPageContent() {
 
                 {/* Selected Participants */}
                 <div>
-                  <label className="block text-sm font-medium mb-2">Selected Participants ({meetingForm.participants.length})</label>
+                  <label className="block text-sm font-medium mb-2">Thành viên đã chọn ({meetingForm.participants.length})</label>
                   <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto">
                     {meetingForm.participants.map((participant) => {
                       const member = teamMembers.find(m => m._id === participant.memberId)
                       return (
                         <div key={participant.memberId} className="flex items-center gap-2 px-3 py-1 bg-blue-50 border border-blue-200 rounded-full text-xs">
                           <Avatar className="h-5 w-5 flex-shrink-0">
-                            {member?.discordUid ? (
-                              <AvatarImage src={`https://cdn.discordapp.com/avatars/${member.discordUid}/avatar.png`} />
-                            ) : (
-                              <AvatarImage src="/images/default.png" />
-                            )}
+                            <AvatarImage src={member?.avatar || "/images/default.png"} />
                             <AvatarFallback className="text-xs">
                               {participant.name.split(' ').map(n => n[0]).join('')}
                             </AvatarFallback>
@@ -907,7 +884,7 @@ function AdminPageContent() {
                     })}
                   </div>
                   {meetingForm.participants.length === 0 && (
-                    <p className="text-sm text-gray-500">No participants selected</p>
+                    <p className="text-sm text-gray-500">Không có thành viên đã chọn</p>
                   )}
                 </div>
 
@@ -923,7 +900,7 @@ function AdminPageContent() {
                 <div className="grid grid-cols-5 gap-2 p-3 bg-gray-50 rounded">
                   <div className="text-center">
                     <div className="text-lg font-bold">{meetingForm.participants.length + meetingForm.temporaryGuests.length}</div>
-                    <div className="text-xs text-gray-600">Total</div>
+                    <div className="text-xs text-gray-600">Tổng</div>
                   </div>
                   <div className="text-center">
                     <div className="text-lg font-bold text-blue-600">
@@ -947,12 +924,12 @@ function AdminPageContent() {
                     <div className="text-lg font-bold text-purple-600">
                       {[...meetingForm.participants, ...meetingForm.temporaryGuests].filter(p => p.meetingRole === 'Boss').length}
                     </div>
-                    <div className="text-xs text-gray-600">Boss</div>
+                    <div className="text-xs text-gray-600">Lão Bản</div>
                   </div>
                 </div>
 
                 <Button onClick={handleCreateMeeting} className="w-full">
-                  Create Meeting Request
+                  Tạo lịch bí cảnh
                 </Button>
               </CardContent>
             </Card>
@@ -960,25 +937,25 @@ function AdminPageContent() {
             {/* Meeting Requests List */}
             <Card>
               <CardHeader>
-                <CardTitle>Meeting Requests</CardTitle>
+                <CardTitle>Lịch bí cảnh</CardTitle>
               </CardHeader>
               <CardContent>
                 {meetingLoading ? (
                   <div className="text-center py-8">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                    <p className="mt-2 text-gray-600">Loading meeting requests...</p>
+                    <p className="mt-2 text-gray-600">Đang tải lịch bí cảnh...</p>
                   </div>
                 ) : meetingError ? (
                   <div className="text-center py-8">
-                    <p className="text-red-600 mb-2">Error loading meeting requests</p>
+                    <p className="text-red-600 mb-2">Lỗi khi tải lịch bí cảnh</p>
                     <p className="text-sm text-gray-600 mb-4">{meetingError}</p>
                     <Button onClick={fetchMeetingRequests} variant="outline">
-                      Try Again
+                      Thử lại
                     </Button>
                   </div>
                 ) : meetingRequests.length === 0 ? (
                   <div className="text-center py-8">
-                    <p className="text-gray-600">No meeting requests found</p>
+                    <p className="text-gray-600">Không tìm thấy lịch bí cảnh</p>
                   </div>
                 ) : (
                   <div className="space-y-4">
@@ -998,7 +975,7 @@ function AdminPageContent() {
                                 size="sm"
                                 onClick={() => handleConfirmMeeting(meeting._id)}
                               >
-                                Confirm
+                                Xác nhận
                               </Button>
                             )}
                             {meeting.status === 'draft' && (
@@ -1007,7 +984,7 @@ function AdminPageContent() {
                                 variant="destructive"
                                 onClick={() => handleCancelMeeting(meeting._id)}
                               >
-                                Cancel
+                                Hủy
                               </Button>
                             )}
                           </div>
@@ -1023,13 +1000,13 @@ function AdminPageContent() {
                             {meeting.status.charAt(0).toUpperCase() + meeting.status.slice(1)}
                           </span>
                           <span className="text-sm text-gray-600">
-                            {meeting.participants.length + meeting.temporaryGuests.length} participants
+                            {meeting.participants.length + meeting.temporaryGuests.length} thành viên
                           </span>
                         </div>
 
                         {/* Participants */}
                         <div className="space-y-2">
-                          <h4 className="font-medium text-sm">Participants:</h4>
+                          <h4 className="font-medium text-sm">Thành viên:</h4>
                           <div className="flex flex-wrap gap-1">
                             {meeting.participants.map((participant) => (
                               <span
@@ -1106,7 +1083,7 @@ function AdminPageContent() {
         onSave={handleSaveGuestRole}
         initialRole={editingGuest?.meetingRole || ''}
         initialClass={editingGuest?.meetingClass || ''}
-        title="Set Guest Meeting Role & Class"
+        title="Đặt vai trò và lớp cho khách mời"
       />
     </div>
   )

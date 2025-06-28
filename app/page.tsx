@@ -1,88 +1,230 @@
 'use client'
 
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
 import { Button } from '../components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
-import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar'
+import { Card, CardContent } from '../components/ui/card'
 import { Input } from '../components/ui/input'
-import { Users, MessageSquare, Swords, User, Settings, Search } from 'lucide-react'
+import { Users, Settings, Search, Calendar, Clock, MapPin } from 'lucide-react'
+import { getClassIcon } from '@/lib/constants'
 
-// Mock data for 25 team members
-const teamMembers = [
-  {
-    _id: '1',
-    name: 'John Doe',
-    discordUid: 'john.doe#1234',
-    roles: ['Senior Developer', 'Tech Lead'],
-    classes: ['Class A', 'Class B'],
-    avatar: null,
-  },
-  {
-    _id: '2',
-    name: 'Jane Smith',
-    discordUid: 'jane.smith#5678',
-    roles: ['Product Manager', 'Scrum Master'],
-    classes: ['Class C', 'Class D'],
-    avatar: null,
-  },
-  {
-    _id: '3',
-    name: 'Mike Johnson',
-    discordUid: 'mike.johnson#9012',
-    roles: ['UX Designer', 'UI Developer'],
-    classes: ['Class E', 'Class F'],
-    avatar: null,
-  },
-  // Add more mock data to reach 25 members
-  ...Array.from({ length: 22 }, (_, i) => ({
-    _id: String(i + 4),
-    name: `Team Member ${i + 4}`,
-    discordUid: `member${i + 4}#${String(i + 4).padStart(4, '0')}`,
-    roles: [
-      ['Developer', 'Code Reviewer'][i % 2],
-      ['Designer', 'Analyst'][i % 2]
-    ],
-    classes: [
-      ['Class A', 'Class B'][i % 2],
-      ['Class C', 'Class D'][i % 2]
-    ],
-    avatar: null,
-  })),
-]
+interface TeamMember {
+  _id: string
+  name: string
+  discordUid?: string
+  roles: string[]
+  classes: string[]
+  avatar?: string
+  isActive: boolean
+}
+
+interface MeetingParticipant {
+  memberId: string
+  name: string
+  discordUid?: string
+  meetingRole: string
+  meetingClass: string
+}
+
+interface TemporaryGuest {
+  id: string
+  name: string
+  discordUid?: string
+  roles: string[]
+  classes: string[]
+  meetingRole: string
+  meetingClass: string
+  avatar?: string
+}
+
+interface MeetingRequest {
+  _id: string
+  title: string
+  description: string
+  date: string
+  time: string
+  status: string
+  participants: MeetingParticipant[]
+  temporaryGuests: TemporaryGuest[]
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+}
 
 export default function HomePage() {
   const [searchTerm, setSearchTerm] = useState('')
+  const [lastMeeting, setLastMeeting] = useState<MeetingRequest | null>(null)
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  // Filter team members based on search term
-  const filteredMembers = useMemo(() => {
-    if (!searchTerm.trim()) return teamMembers
+  // Fetch the last meeting request and team members
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+
+        // Fetch team members
+        const membersResponse = await fetch('/api/team-members')
+        if (!membersResponse.ok) {
+          throw new Error('Failed to fetch team members')
+        }
+        const membersData = await membersResponse.json()
+        setTeamMembers(membersData)
+
+        // Fetch meeting requests
+        const meetingsResponse = await fetch('/api/meeting-requests')
+        if (!meetingsResponse.ok) {
+          throw new Error('Failed to fetch meeting requests')
+        }
+        const meetingsData = await meetingsResponse.json()
+        
+        // Get the most recent confirmed meeting
+        const confirmedMeetings = meetingsData
+          .filter((meeting: MeetingRequest) => meeting.status === 'confirmed' && meeting.isActive)
+          .sort((a: MeetingRequest, b: MeetingRequest) => 
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          )
+        
+        if (confirmedMeetings.length > 0) {
+          setLastMeeting(confirmedMeetings[0])
+        }
+      } catch (err) {
+        console.error('Error fetching data:', err)
+        setError(err instanceof Error ? err.message : 'An error occurred')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchData()
+  }, [])
+
+  // Combine team members and guests for display
+  const allParticipants = useMemo(() => {
+    if (!lastMeeting) return []
+
+    const participants = lastMeeting.participants.map(participant => {
+      const member = teamMembers.find(m => m._id === participant.memberId)
+      return {
+        id: participant.memberId,
+        name: participant.name,
+        discordUid: participant.discordUid,
+        avatar: member?.avatar,
+        meetingRole: participant.meetingRole,
+        meetingClass: participant.meetingClass,
+        allClasses: member?.classes || [participant.meetingClass],
+        type: 'member' as const
+      }
+    })
+
+    const guests = lastMeeting.temporaryGuests.map(guest => ({
+      id: guest.id,
+      name: guest.name,
+      discordUid: guest.discordUid,
+      avatar: guest.avatar,
+      meetingRole: guest.meetingRole,
+      meetingClass: guest.meetingClass,
+      allClasses: guest.classes || [guest.meetingClass],
+      type: 'guest' as const
+    }))
+
+    return [...participants, ...guests]
+  }, [lastMeeting, teamMembers])
+
+  // Filter participants based on search term
+  const filteredParticipants = useMemo(() => {
+    if (!searchTerm.trim()) return allParticipants
     
-    return teamMembers.filter(member =>
-      member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      member.discordUid?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      member.roles.some(role => role.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      member.classes.some(cls => cls.toLowerCase().includes(searchTerm.toLowerCase()))
+    return allParticipants.filter(participant =>
+      participant.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      participant.discordUid?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      participant.meetingRole.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      participant.meetingClass.toLowerCase().includes(searchTerm.toLowerCase())
     )
-  }, [searchTerm])
+  }, [allParticipants, searchTerm])
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Đang tải dữ liệu...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">Error: {error}</p>
+          <Button onClick={() => window.location.reload()}>
+            Thử lại
+          </Button>
+        </div>
+      </div>
+    )
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      <div className="container mx-auto px-4 py-8 max-w-8xl">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            Team Meeting Participants
-          </h1>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            {filteredMembers.length} team members will join the meeting today
-          </p>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+      {/* Hero Banner - Full Width */}
+      <div className="w-full mb-8">
+        <div className="relative overflow-hidden">
+          <img 
+            src="/images/ll.png" 
+            alt="League Legend Banner" 
+            className="w-full h-auto max-h-64 object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
+          
+          <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-gray-50 to-transparent"></div>
+          
+          {/* Content Overlay */}
+          <div className="absolute inset-0 flex flex-col justify-center items-center p-6">
+            {/* Meeting Info - Centered */}
+            <div className="text-white text-center">
+              {/* Meeting Information */}
+              {lastMeeting ? (
+                <div>
+                  <div className="text-4xl font-bold mb-6 drop-shadow-lg" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.8)' }}>
+                    {lastMeeting.title} - {lastMeeting.description}
+                  </div>
+                  <div className="flex flex-wrap justify-center gap-4 text-lg">
+                    <span className="inline-flex items-center gap-2 px-4 py-2 bg-white bg-opacity-25 text-white rounded-full shadow-lg border border-white/30 backdrop-blur-sm">
+                      <Calendar className="h-5 w-5" />
+                      {new Date(lastMeeting.date).toLocaleDateString()}
+                    </span>
+                    <span className="inline-flex items-center gap-2 px-4 py-2 bg-white bg-opacity-25 text-white rounded-full shadow-lg border border-white/30 backdrop-blur-sm">
+                      <Clock className="h-5 w-5" />
+                      {lastMeeting.time}
+                    </span>
+                    <span className="inline-flex items-center gap-2 px-4 py-2 bg-white bg-opacity-25 text-white rounded-full capitalize shadow-lg border border-white/30 backdrop-blur-sm">
+                      <MapPin className="h-5 w-5" />
+                      {lastMeeting.status}
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <p className="text-4xl font-bold drop-shadow-lg" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.8)' }}>
+                    Không có lịch bí cảnh
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
+      </div>
 
-        {/* Admin Access Button */}
-        <div className="text-center mb-8">
+      <div className="container mx-auto px-4 py-8 max-w-8xl">
+        {/* Floating Admin Access Button */}
+        <div className="fixed bottom-6 right-6 z-50">
           <Link href="/login">
-            <Button variant="outline" className="mb-4">
+            <Button variant="outline" className="shadow-lg">
               <Settings className="h-4 w-4 mr-2" />
               Admin Access
             </Button>
@@ -103,76 +245,115 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Team Members Grid */}
-        <div className="grid grid-cols-5 gap-4 max-w-full mx-auto px-4">
-          {filteredMembers.map((member) => (
-            <Card key={member._id} className="hover:shadow-lg transition-shadow">
-              <CardHeader className="pb-4">
-                <div className="flex items-center space-x-4">
-                  <Avatar className="h-12 w-12">
-                    <AvatarImage src={member.avatar || "/images/default.png"} />
-                    <AvatarFallback>
-                      {member.name.split(' ').map(n => n[0]).join('')}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <CardTitle className="text-lg truncate">{member.name}</CardTitle>
-                    <CardDescription className="truncate">{member.roles.join(', ')}</CardDescription>
+        {/* Participants Grid */}
+        {lastMeeting && (
+          <div className="flex flex-wrap justify-center max-w-full mx-auto px-4" style={{ margin: '0 -15px' }}>
+            {filteredParticipants.map((participant) => (
+              <div key={participant.id} className="card" style={{ margin: '0 5px 10px 5px' }}>
+                <div 
+                  className="card-photo"
+                  style={{
+                    backgroundImage: `url(${participant.avatar || "/images/default.png"})`
+                  }}
+                ></div>
+                <div className="card-title">
+                  <div className="flex items-center justify-center gap-2">
+                    {participant.name}
+                    {participant.type === 'guest' && (
+                      <span className="px-2 py-0.5 bg-orange-100 text-orange-700 rounded-full text-xs">
+                        Guest
+                      </span>
+                    )}
                   </div>
+                  <span>{participant.meetingRole} - {participant.meetingClass}</span>
                 </div>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex items-center space-x-2 text-sm text-gray-600">
-                  <MessageSquare className="h-4 w-4" />
-                  <span className="truncate">{member.discordUid}</span>
+                <div className="card-socials">
+                  {participant.allClasses.slice(0, 3).map((classCode, index) => (
+                    <button key={index} className="card-socials-btn" title={classCode}>
+                      <img 
+                        src={getClassIcon(classCode as any)} 
+                        alt={classCode}
+                        className="w-5 h-5"
+                      />
+                    </button>
+                  ))}
                 </div>
-                <div className="flex items-center space-x-2 text-sm text-gray-600">
-                  <Swords className="h-4 w-4" />
-                  <span>{member.classes.join(', ')}</span>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* No results message */}
-        {filteredMembers.length === 0 && searchTerm && (
+        {lastMeeting && filteredParticipants.length === 0 && searchTerm && (
           <div className="text-center py-8">
-            <p className="text-gray-600">No team members found matching "{searchTerm}"</p>
+            <p className="text-gray-600">Không tìm thấy thành viên phù hợp với "{searchTerm}"</p>
+          </div>
+        )}
+
+        {/* No meeting message */}
+        {!lastMeeting && (
+          <div className="text-center py-12">
+            <Users className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-gray-600 mb-2">Không có lịch bí cảnh</h3>
+            <p className="text-gray-500">Không có lịch bí cảnh để hiển thị.</p>
           </div>
         )}
 
         {/* Summary Stats */}
-        <div className="mt-12 grid grid-cols-1 md:grid-cols-4 gap-6 max-w-4xl mx-auto">
-          <Card>
-            <CardContent className="p-6">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600">{filteredMembers.length}</div>
-                <div className="text-sm text-gray-600">Total Members</div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-green-600">
-                  {new Set(filteredMembers.flatMap(m => m.classes)).size}
+        {lastMeeting && (
+          <div className="mt-12 grid grid-cols-1 md:grid-cols-5 gap-6 max-w-6xl mx-auto">
+            <Card>
+              <CardContent className="p-6">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-blue-600">
+                    {filteredParticipants.length}
+                  </div>
+                  <div className="text-sm text-gray-600">Tổng thành viên</div>
                 </div>
-                <div className="text-sm text-gray-600">Classes</div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-purple-600">
-                  {new Set(filteredMembers.flatMap(m => m.roles)).size}
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-6">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-green-600">
+                    {filteredParticipants.filter(p => p.meetingRole === 'Tank').length}
+                  </div>
+                  <div className="text-sm text-gray-600">Tank</div>
                 </div>
-                <div className="text-sm text-gray-600">Roles</div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-6">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-purple-600">
+                    {filteredParticipants.filter(p => p.meetingRole === 'DPS').length}
+                  </div>
+                  <div className="text-sm text-gray-600">DPS</div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-6">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-yellow-600">
+                    {filteredParticipants.filter(p => p.meetingRole === 'Buff').length}
+                  </div>
+                  <div className="text-sm text-gray-600">Buff</div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-6">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-red-600">
+                    {filteredParticipants.filter(p => p.meetingRole === 'Boss').length}
+                  </div>
+                  <div className="text-sm text-gray-600">Lão Bản</div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </div>
     </div>
   )
