@@ -557,6 +557,43 @@ function AdminPageContent() {
     setShowGuestRoleModal(false)
   }
 
+  const handleFillAllMembers = () => {
+    const totalMembers = teamMembers.filter(m => m.isActive).length + meetingForm.temporaryGuests.length
+    if (totalMembers > 25) {
+      alert('Tối đa 25 thành viên (bao gồm khách mời) cho mỗi lịch bí cảnh')
+      return
+    }
+
+    const allActiveMembers = teamMembers.filter(m => m.isActive)
+    const newParticipants: MeetingParticipant[] = allActiveMembers.map(member => ({
+      memberId: member._id,
+      name: member.name,
+      discordUid: member.discordUid,
+      meetingRole: member.roles[0] || 'DPS', // Use first role as default
+      meetingClass: member.classes[0] || 'BD' // Use first class as default
+    }))
+
+    setMeetingForm(prev => ({
+      ...prev,
+      participants: newParticipants
+    }))
+  }
+
+  const handleCopyFromMeeting = (meeting: MeetingRequest) => {
+    const totalMembers = meeting.participants.length + meeting.temporaryGuests.length + meetingForm.temporaryGuests.length
+    if (totalMembers > 25) {
+      alert('Tối đa 25 thành viên (bao gồm khách mời) cho mỗi lịch bí cảnh')
+      return
+    }
+
+    // Copy participants from the selected meeting
+    setMeetingForm(prev => ({
+      ...prev,
+      participants: [...meeting.participants],
+      temporaryGuests: [...meeting.temporaryGuests]
+    }))
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8">
@@ -805,7 +842,17 @@ function AdminPageContent() {
 
                 {/* Participant Selection */}
                 <div>
-                  <label className="block text-sm font-medium mb-2">Chọn thành viên</label>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-sm font-medium">Chọn thành viên</label>
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      onClick={handleFillAllMembers}
+                      className="text-xs"
+                    >
+                      Thêm tất cả thành viên
+                    </Button>
+                  </div>
                   <Input
                     placeholder="Tìm kiếm thành viên..."
                     value={participantSearch}
@@ -987,6 +1034,13 @@ function AdminPageContent() {
                                 Hủy
                               </Button>
                             )}
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleCopyFromMeeting(meeting)}
+                            >
+                              Sao chép thành viên
+                            </Button>
                           </div>
                         </div>
                         
