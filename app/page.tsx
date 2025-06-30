@@ -238,10 +238,13 @@ export default function HomePage() {
           <div className="text-center mb-12">
             {lastMeeting ? (
               <div className="space-y-6">
-                <h1 className="text-5xl md:text-7xl font-bold text-white mb-4 drop-shadow-2xl" 
+                <h1 className="neon-text text-6xl md:text-8xl mb-2">
+                  Lục Long - PVE Việt Nam
+                </h1>
+                <h2 className="text-5xl md:text-7xl font-bold text-white mb-4 drop-shadow-2xl" 
                     style={{ textShadow: '3px 3px 6px rgba(0,0,0,0.8)' }}>
                   {lastMeeting.title}
-                </h1>
+                </h2>
                 <p className="text-2xl md:text-3xl text-amber-200 font-medium drop-shadow-lg">
                   {lastMeeting.description}
                 </p>
