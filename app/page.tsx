@@ -137,12 +137,17 @@ export default function HomePage() {
   const filteredParticipants = useMemo(() => {
     if (!searchTerm.trim()) return allParticipants
     
-    return allParticipants.filter(participant =>
-      participant.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      participant.discordUid?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      participant.meetingRole.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      participant.meetingClass.toLowerCase().includes(searchTerm.toLowerCase())
-    )
+    const searchLower = searchTerm.toLowerCase()
+    
+    return allParticipants.filter(participant => {
+      const nameMatch = participant.name.toLowerCase().includes(searchLower)
+      const discordMatch = participant.discordUid?.toLowerCase().includes(searchLower) || false
+      const roleMatch = participant.meetingRole.toLowerCase().includes(searchLower)
+      const classCodeMatch = participant.meetingClass.toLowerCase().includes(searchLower)
+      const classValueMatch = getClassValue(participant.meetingClass as any).toLowerCase().includes(searchLower)
+      
+      return nameMatch || discordMatch || roleMatch || classCodeMatch || classValueMatch
+    })
   }, [allParticipants, searchTerm])
 
   if (loading) {
