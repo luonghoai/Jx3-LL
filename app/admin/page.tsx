@@ -81,6 +81,7 @@ function AdminPageContent() {
   const [editingGuest, setEditingGuest] = useState<TemporaryGuest | null>(null)
   const [editingGuestId, setEditingGuestId] = useState<string | null>(null)
   const [showGuestRoleModal, setShowGuestRoleModal] = useState(false)
+  const [editingMeetingId, setEditingMeetingId] = useState<string | null>(null)
   
   // Meeting filter state
   const [meetingFilter, setMeetingFilter] = useState<MeetingFilterOption>(MEETING_FILTER_OPTIONS.ALL)
@@ -594,6 +595,111 @@ function AdminPageContent() {
     }))
   }
 
+  const handleEditMeeting = (meeting: MeetingRequest) => {
+    // Fill the meeting form with existing meeting data
+    setMeetingForm({
+      title: meeting.title,
+      description: meeting.description,
+      date: meeting.date,
+      time: meeting.time,
+      participants: [...meeting.participants],
+      temporaryGuests: [...meeting.temporaryGuests]
+    })
+
+    // Set editing state
+    setEditingMeetingId(meeting._id)
+
+    // Switch to meetings tab and scroll to top
+    setActiveTab('meetings')
+    
+    // Scroll to the form
+    setTimeout(() => {
+      const formElement = document.querySelector('[data-meeting-form]')
+      if (formElement) {
+        formElement.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }
+    }, 100)
+  }
+
+  const handleUpdateMeeting = async () => {
+    if (!editingMeetingId) {
+      alert('Không tìm thấy lịch bí cảnh để cập nhật')
+      return
+    }
+
+    const missingFields = []
+    if (!meetingForm.title) missingFields.push('Title')
+    if (!meetingForm.description) missingFields.push('Description')
+    if (!meetingForm.date) missingFields.push('Date')
+    if (!meetingForm.time) missingFields.push('Time')
+    if (meetingForm.participants.length === 0 && meetingForm.temporaryGuests.length === 0) {
+      missingFields.push('Ít nhất một thành viên hoặc khách mời')
+    }
+    
+    if (missingFields.length > 0) {
+      alert(`Vui lòng điền các trường bắt buộc: ${missingFields.join(', ')}`)
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/meeting-requests/${editingMeetingId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: meetingForm.title,
+          description: meetingForm.description,
+          date: meetingForm.date,
+          time: meetingForm.time,
+          participants: meetingForm.participants,
+          temporaryGuests: meetingForm.temporaryGuests
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Không thể cập nhật lịch bí cảnh')
+      }
+
+      const updatedMeeting = await response.json()
+      setMeetingRequests(prev => 
+        prev.map(meeting => 
+          meeting._id === editingMeetingId ? updatedMeeting : meeting
+        )
+      )
+      
+      // Reset form and editing state
+      setMeetingForm({
+        title: '',
+        description: '',
+        date: '',
+        time: '',
+        participants: [],
+        temporaryGuests: [],
+      })
+      setEditingMeetingId(null)
+
+      alert('Cập nhật lịch bí cảnh thành công!')
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Không thể cập nhật lịch bí cảnh')
+      console.error('Error updating meeting request:', err)
+    }
+  }
+
+  const handleCancelEdit = () => {
+    // Reset form and editing state
+    setMeetingForm({
+      title: '',
+      description: '',
+      date: '',
+      time: '',
+      participants: [],
+      temporaryGuests: [],
+    })
+    setEditingMeetingId(null)
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8">
@@ -798,9 +904,11 @@ function AdminPageContent() {
         {activeTab === 'meetings' && (
           <div className="space-y-6">
             {/* Meeting Request Form */}
-            <Card>
+            <Card data-meeting-form>
               <CardHeader>
-                <CardTitle>Tạo lịch bí cảnh mới</CardTitle>
+                <CardTitle>
+                  {editingMeetingId ? 'Chỉnh sửa lịch bí cảnh' : 'Tạo lịch bí cảnh mới'}
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -894,6 +1002,21 @@ function AdminPageContent() {
                   <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto">
                     {meetingForm.participants.map((participant) => {
                       const member = teamMembers.find(m => m._id === participant.memberId)
+                      const getRoleTextColor = (role: string) => {
+                        switch (role) {
+                          case 'Tank':
+                            return 'text-blue-600'
+                          case 'DPS':
+                            return 'text-red-600'
+                          case 'Buff':
+                            return 'text-green-600'
+                          case 'Boss':
+                            return 'text-purple-600'
+                          default:
+                            return 'text-gray-600'
+                        }
+                      }
+                      
                       return (
                         <div key={participant.memberId} className="flex items-center gap-2 px-3 py-1 bg-blue-50 border border-blue-200 rounded-full text-xs">
                           <Avatar className="h-5 w-5 flex-shrink-0">
@@ -903,7 +1026,9 @@ function AdminPageContent() {
                             </AvatarFallback>
                           </Avatar>
                           <span className="font-medium text-blue-900 truncate">{participant.name}</span>
-                          <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full">{participant.meetingRole}</span>
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getRoleTextColor(participant.meetingRole)}`}>
+                            {participant.meetingRole}
+                          </span>
                           <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full">{getClassValue(participant.meetingClass as any)}</span>
                           <Button
                             size="icon"
@@ -975,9 +1100,19 @@ function AdminPageContent() {
                   </div>
                 </div>
 
-                <Button onClick={handleCreateMeeting} className="w-full">
-                  Tạo lịch bí cảnh
-                </Button>
+                <div className="flex gap-2">
+                  {editingMeetingId && (
+                    <Button variant="outline" onClick={handleCancelEdit} className="flex-1">
+                      Hủy chỉnh sửa
+                    </Button>
+                  )}
+                  <Button 
+                    onClick={editingMeetingId ? handleUpdateMeeting : handleCreateMeeting} 
+                    className={editingMeetingId ? "flex-1" : "w-full"}
+                  >
+                    {editingMeetingId ? 'Cập nhật lịch bí cảnh' : 'Tạo lịch bí cảnh'}
+                  </Button>
+                </div>
               </CardContent>
             </Card>
 
@@ -1006,7 +1141,7 @@ function AdminPageContent() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {meetingRequests.map((meeting) => (
+                    {paginatedMeetings.map((meeting) => (
                       <div key={meeting._id} className="border rounded-lg p-4">
                         <div className="flex justify-between items-start mb-3">
                           <div>
@@ -1037,6 +1172,14 @@ function AdminPageContent() {
                             <Button
                               size="sm"
                               variant="outline"
+                              onClick={() => handleEditMeeting(meeting)}
+                            >
+                              <Edit className="h-3 w-3 mr-1" />
+                              Chỉnh sửa
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
                               onClick={() => handleCopyFromMeeting(meeting)}
                             >
                               Sao chép thành viên
@@ -1062,28 +1205,104 @@ function AdminPageContent() {
                         <div className="space-y-2">
                           <h4 className="font-medium text-sm">Thành viên:</h4>
                           <div className="flex flex-wrap gap-1">
-                            {meeting.participants.map((participant) => (
-                              <span
-                                key={participant.memberId}
-                                className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs"
-                                title={`${participant.meetingRole} • ${participant.meetingClass}`}
-                              >
-                                {participant.name} - {participant.meetingRole} - {getClassValue(participant.meetingClass as any)}
-                              </span>
-                            ))}
-                            {meeting.temporaryGuests.map((guest) => (
-                              <span
-                                key={guest.id}
-                                className="px-2 py-1 bg-orange-100 text-orange-800 rounded text-xs"
-                                title={`${guest.meetingRole} • ${guest.meetingClass} (Guest)`}
-                              >
-                                {guest.name} - {guest.meetingRole} - {getClassValue(guest.meetingClass as any)} (G)
-                              </span>
-                            ))}
+                            {meeting.participants.map((participant) => {
+                              const getRoleTextColor = (role: string) => {
+                                switch (role) {
+                                  case 'Tank':
+                                    return 'text-blue-600'
+                                  case 'DPS':
+                                    return 'text-red-600'
+                                  case 'Buff':
+                                    return 'text-green-600'
+                                  case 'Boss':
+                                    return 'text-purple-600'
+                                  default:
+                                    return 'text-gray-600'
+                                }
+                              }
+                              
+                              return (
+                                <span
+                                  key={participant.memberId}
+                                  className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs"
+                                  title={`${participant.meetingRole} • ${participant.meetingClass}`}
+                                >
+                                  {participant.name} - <span className={`font-semibold ${getRoleTextColor(participant.meetingRole)}`}>{participant.meetingRole}</span> - {getClassValue(participant.meetingClass as any)}
+                                </span>
+                              )
+                            })}
+                            {meeting.temporaryGuests.map((guest) => {
+                              const getRoleTextColor = (role: string) => {
+                                switch (role) {
+                                  case 'Tank':
+                                    return 'text-blue-600'
+                                  case 'DPS':
+                                    return 'text-red-600'
+                                  case 'Buff':
+                                    return 'text-green-600'
+                                  case 'Boss':
+                                    return 'text-purple-600'
+                                  default:
+                                    return 'text-gray-600'
+                                }
+                              }
+                              
+                              return (
+                                <span
+                                  key={guest.id}
+                                  className="px-2 py-1 bg-orange-100 text-orange-800 rounded text-xs"
+                                  title={`${guest.meetingRole} • ${guest.meetingClass} (Guest)`}
+                                >
+                                  {guest.name} - <span className={`font-semibold ${getRoleTextColor(guest.meetingRole)}`}>{guest.meetingRole}</span> - {getClassValue(guest.meetingClass as any)} (G)
+                                </span>
+                              )
+                            })}
                           </div>
                         </div>
                       </div>
                     ))}
+
+                    {/* Meeting Requests Pagination Controls */}
+                    {totalPages > 1 && (
+                      <div className="flex items-center justify-between mt-6 pt-4 border-t">
+                        <div className="text-sm text-gray-700">
+                          Hiển thị {startIndex + 1} đến {Math.min(endIndex, filteredMeetings.length)} trong tổng số {filteredMeetings.length} lịch bí cảnh
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                            disabled={currentPage === 1}
+                          >
+                            Trước
+                          </Button>
+                          
+                          <div className="flex items-center space-x-1">
+                            {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                              <Button
+                                key={page}
+                                variant={currentPage === page ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => setCurrentPage(page)}
+                                className="w-8 h-8 p-0"
+                              >
+                                {page}
+                              </Button>
+                            ))}
+                          </div>
+                          
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                            disabled={currentPage === totalPages}
+                          >
+                            Tiếp
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </CardContent>
