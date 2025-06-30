@@ -141,4 +141,19 @@
 .card-photo:hover {
   transition: 0.3s;
   transform: scale(0.45) translate(100px, 100px);
+}
+
+/* Neon Text Effect */
+.neon-text {
+  color: #fffbe6;
+  font-family: 'Indie Flower', 'Brush Script MT', cursive, sans-serif;
+  font-weight: 400;
+  text-shadow:
+    0 0 8px #fffbe6,
+    0 0 16px #ffd700,
+    0 0 32px #ff9900,
+    0 0 64px #ff6600,
+    0 0 128px #ff3300;
+  letter-spacing: 0.1em;
+  filter: brightness(1.2);
 } 
