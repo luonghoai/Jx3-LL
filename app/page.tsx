@@ -241,7 +241,7 @@ export default function HomePage() {
                 <h1 className="neon-text text-6xl md:text-8xl mb-2">
                   Lục Long
                 </h1>
-                <h2 className="text-5xl md:text-7xl font-bold text-white mb-4 drop-shadow-2xl" 
+                <h2 className="text-3xl md:text-5xl font-bold text-white mb-4 drop-shadow-2xl" 
                     style={{ textShadow: '3px 3px 6px rgba(0,0,0,0.8)' }}>
                   {lastMeeting.title}
                 </h2>
@@ -318,7 +318,7 @@ export default function HomePage() {
           {/* Search Bar */}
           <div className="w-full max-w-2xl mb-8">
             <div className="relative">
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-amber-200" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-amber-200 h-5 w-5 z-10" />
               <Input
                 type="text"
                 placeholder="Tìm kiếm theo tên, Discord UID, vai trò, hoặc môn phái..."
@@ -365,7 +365,7 @@ export default function HomePage() {
                     <div className="flex items-center justify-center gap-2">
                       {participant.name}
                       {participant.type === 'guest' && (
-                        <span className="px-2 py-0.5 bg-orange-100 text-orange-700 rounded-full text-xs">
+                        <span className="px-2 py-0.5 border border-orange-500 !text-orange-500 rounded-full text-xs bg-transparent">
                           Guest
                         </span>
                       )}
