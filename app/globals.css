@@ -58,6 +58,14 @@
   }
 }
 
+@layer base {
+  input,
+  textarea,
+  select {
+    @apply text-base;
+  }
+}
+
 /* Custom Card Styles */
 .card {
   --font-color: #323232;
