@@ -239,7 +239,7 @@ export default function HomePage() {
             {lastMeeting ? (
               <div className="space-y-6">
                 <h1 className="neon-text text-6xl md:text-8xl mb-2">
-                  Lục Long - PVE Việt Nam
+                  Lục Long
                 </h1>
                 <h2 className="text-5xl md:text-7xl font-bold text-white mb-4 drop-shadow-2xl" 
                     style={{ textShadow: '3px 3px 6px rgba(0,0,0,0.8)' }}>
