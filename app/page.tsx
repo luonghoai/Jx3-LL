@@ -7,6 +7,24 @@ import { Card, CardContent } from '../components/ui/card'
 import { Input } from '../components/ui/input'
 import { Users, Settings, Search, Calendar, Clock, MapPin } from 'lucide-react'
 import { getClassIcon, getClassValue } from '@/lib/constants'
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core'
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  rectSortingStrategy,
+} from '@dnd-kit/sortable'
+import {
+  useSortable,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 
 interface TeamMember {
   _id: string
@@ -24,6 +42,7 @@ interface MeetingParticipant {
   discordUid?: string
   meetingRole: string
   meetingClass: string
+  position?: number
 }
 
 interface TemporaryGuest {
@@ -35,6 +54,7 @@ interface TemporaryGuest {
   meetingRole: string
   meetingClass: string
   avatar?: string
+  position?: number
 }
 
 interface MeetingRequest {
@@ -58,6 +78,91 @@ interface CountdownTime {
   seconds: number
 }
 
+interface SortableParticipantCardProps {
+  participant: {
+    id: string
+    name: string
+    discordUid?: string
+    avatar?: string
+    meetingRole: string
+    meetingClass: string
+    allClasses: string[]
+    type: 'member' | 'guest'
+  }
+  getRoleColor: (role: string) => string
+}
+
+function SortableParticipantCard({ participant, getRoleColor }: SortableParticipantCardProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ 
+    id: participant.id,
+    transition: {
+      duration: 0, // Disable transition during drag
+      easing: 'cubic-bezier(0.25, 1, 0.5, 1)',
+    },
+  })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition: isDragging ? 'none' : transition, // No transition during drag
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 1000 : 'auto',
+  }
+
+  return (
+    <div 
+      ref={setNodeRef} 
+      style={style} 
+      {...attributes}
+      {...listeners}
+      data-dragging={isDragging}
+      className={`flex items-center p-3 w-full h-24 bg-white rounded-md shadow-lg cursor-move hover:shadow-xl transition-shadow sortable-card ${isDragging ? 'dragging' : ''}`}
+    >
+      <section className="flex justify-center items-center w-12 h-12 rounded-full shadow-md bg-gradient-to-r from-[#F9C97C] to-[#A2E9C1] hover:from-[#C9A9E9] hover:to-[#7EE7FC] hover:scale-110 duration-300 overflow-hidden flex-shrink-0">
+        <img 
+          src={participant.avatar || "/images/default.png"}
+          alt={participant.name}
+          className="w-10 h-10 rounded-full object-cover"
+        />
+      </section>
+
+      <section className="block border-l border-gray-300 m-2 flex-1 min-w-0">
+        <div className="pl-2">
+          <h3 className="text-gray-600 font-semibold text-xs flex items-center gap-1 truncate">
+            {participant.name}
+            {participant.type === 'guest' && (
+              <span className="px-1 py-0.5 border border-orange-500 text-orange-500 rounded-full text-xs bg-transparent flex-shrink-0">
+                Guest
+              </span>
+            )}
+          </h3>
+          <h3 className="text-sm font-bold truncate">
+            <span className={getRoleColor(participant.meetingRole)}>{participant.meetingRole}</span>
+            <span className="text-gray-600"> - {getClassValue(participant.meetingClass as any)}</span>
+          </h3>
+        </div>
+        <div className="flex gap-1 pt-1 pl-2">
+          {participant.allClasses.slice(0, 3).map((classCode, index) => (
+            <img 
+              key={index}
+              src={getClassIcon(classCode as any)} 
+              alt={classCode}
+              className="w-6 h-6 hover:scale-125 duration-200 hover:cursor-pointer flex-shrink-0"
+              title={classCode}
+            />
+          ))}
+        </div>
+      </section>
+    </div>
+  )
+}
+
 export default function HomePage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [lastMeeting, setLastMeeting] = useState<MeetingRequest | null>(null)
@@ -65,6 +170,23 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [countdown, setCountdown] = useState<CountdownTime>({ days: 0, hours: 0, minutes: 0, seconds: 0 })
+  const [isDraggingEnabled, setIsDraggingEnabled] = useState(false)
+  const [isUpdatingPositions, setIsUpdatingPositions] = useState(false)
+
+  // Configure sensors for drag and drop
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  )
+
+  // State to track if dragging is active
+  const [isDraggingActive, setIsDraggingActive] = useState(false)
 
   // Calculate countdown timer
   useEffect(() => {
@@ -150,7 +272,8 @@ export default function HomePage() {
         meetingRole: participant.meetingRole,
         meetingClass: participant.meetingClass,
         allClasses: member?.classes || [participant.meetingClass],
-        type: 'member' as const
+        type: 'member' as const,
+        position: participant.position || 0
       }
     })
 
@@ -162,11 +285,23 @@ export default function HomePage() {
       meetingRole: guest.meetingRole,
       meetingClass: guest.meetingClass,
       allClasses: guest.classes || [guest.meetingClass],
-      type: 'guest' as const
+      type: 'guest' as const,
+      position: guest.position || 0
     }))
 
-    return [...participants, ...guests]
+    // Sort by position if available, otherwise by original order
+    const combined = [...participants, ...guests]
+    return combined.sort((a, b) => (a.position || 0) - (b.position || 0))
   }, [lastMeeting, teamMembers])
+
+  // Check if drag and drop should be enabled (5x5 grid or less)
+  useEffect(() => {
+    if (allParticipants.length <= 25) {
+      setIsDraggingEnabled(true)
+    } else {
+      setIsDraggingEnabled(false)
+    }
+  }, [allParticipants.length])
 
   // Filter participants based on search term
   const filteredParticipants = useMemo(() => {
@@ -184,6 +319,106 @@ export default function HomePage() {
       return nameMatch || discordMatch || roleMatch || classCodeMatch || classValueMatch
     })
   }, [allParticipants, searchTerm])
+
+  // Function to get role color
+  const getRoleColor = (role: string) => {
+    switch (role) {
+      case 'Tank':
+        return 'text-green-400'
+      case 'DPS':
+        return 'text-purple-400'
+      case 'Buff':
+        return 'text-yellow-400'
+      case 'Boss':
+        return 'text-red-400'
+      default:
+        return 'text-gray-600'
+    }
+  }
+
+  // Handle drag end
+  const handleDragEnd = async (event: DragEndEvent) => {
+    setIsDraggingActive(false)
+    const { active, over } = event
+
+    if (active.id !== over?.id) {
+      const oldIndex = filteredParticipants.findIndex(p => p.id === active.id)
+      const newIndex = filteredParticipants.findIndex(p => p.id === over?.id)
+
+      if (oldIndex !== -1 && newIndex !== -1) {
+
+        // Create new order by swapping the two items
+        const newOrder = [...filteredParticipants]
+        const temp = newOrder[oldIndex]
+        newOrder[oldIndex] = newOrder[newIndex]
+        newOrder[newIndex] = temp
+        
+        
+        // Update positions in the backend
+        await updateParticipantPositions(newOrder)
+      }
+    }
+  }
+
+  // Handle drag start - prevent other cards from moving
+  const handleDragStart = (event: any) => {
+    setIsDraggingActive(true)
+  }
+
+
+
+  // Update participant positions in the backend
+  const updateParticipantPositions = async (newOrder: typeof filteredParticipants) => {
+    if (!lastMeeting) return
+
+    try {
+      setIsUpdatingPositions(true)
+
+      // Assign new positions based on the new order
+      const updatedParticipants = lastMeeting.participants.map(participant => {
+        const newPosition = newOrder.findIndex(p => p.id === participant.memberId)
+        return {
+          ...participant,
+          position: newPosition >= 0 ? newPosition : participant.position || 0
+        }
+      })
+
+      const updatedGuests = lastMeeting.temporaryGuests.map(guest => {
+        const newPosition = newOrder.findIndex(p => p.id === guest.id)
+        return {
+          ...guest,
+          position: newPosition >= 0 ? newPosition : guest.position || 0
+        }
+      })
+
+      // Sort both arrays by their new positions to ensure consistency
+      updatedParticipants.sort((a, b) => (a.position || 0) - (b.position || 0))
+      updatedGuests.sort((a, b) => (a.position || 0) - (b.position || 0))
+
+      const response = await fetch(`/api/meeting-requests/${lastMeeting._id}/positions`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          participants: updatedParticipants,
+          temporaryGuests: updatedGuests
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to update positions')
+      }
+
+      const updatedMeeting = await response.json()
+      setLastMeeting(updatedMeeting)
+    } catch (error) {
+      console.error('Error updating positions:', error)
+      // You might want to show a toast notification here
+    } finally {
+      setIsUpdatingPositions(false)
+    }
+  }
 
   if (loading) {
     return (
@@ -347,44 +582,82 @@ export default function HomePage() {
 
           {/* Participants Grid */}
           {lastMeeting && (
-            <div className="flex flex-wrap justify-center max-w-full mx-auto gap-2">
-              {filteredParticipants.map((participant) => (
-                <div key={participant.id} className="card flex-shrink-0" style={{ 
-                  margin: '0',
-                  width: 'calc(10% - 8px)',
-                  minWidth: '120px',
-                  maxWidth: '150px'
-                }}>
-                  <div 
-                    className="card-photo"
-                    style={{
-                      backgroundImage: `url(${participant.avatar || "/images/default.png"})`
-                    }}
-                  ></div>
-                  <div className="card-title">
-                    <div className="flex items-center justify-center gap-2">
-                      {participant.name}
-                      {participant.type === 'guest' && (
-                        <span className="px-2 py-0.5 border border-orange-500 !text-orange-500 rounded-full text-xs bg-transparent">
-                          Guest
-                        </span>
-                      )}
-                    </div>
-                    <span>{participant.meetingRole} - {getClassValue(participant.meetingClass as any)}</span>
-                  </div>
-                  <div className="card-socials">
-                    {participant.allClasses.slice(0, 3).map((classCode, index) => (
-                      <button key={index} className="card-socials-btn" title={classCode}>
-                        <img 
-                          src={getClassIcon(classCode as any)} 
-                          alt={classCode}
-                          className="w-5 h-5"
+            <div className="max-w-7xl mx-auto">
+              {isDraggingEnabled ? (
+                <DndContext
+                  sensors={sensors}
+                  collisionDetection={closestCenter}
+                  onDragStart={handleDragStart}
+                  onDragEnd={handleDragEnd}
+                >
+                  <SortableContext
+                    items={filteredParticipants.map(p => p.id)}
+                    strategy={rectSortingStrategy}
+                  >
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                      {filteredParticipants.map((participant) => (
+                        <SortableParticipantCard
+                          key={participant.id}
+                          participant={participant}
+                          getRoleColor={getRoleColor}
                         />
-                      </button>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  </SortableContext>
+                </DndContext>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                  {filteredParticipants.map((participant) => (
+                    <div key={participant.id} className="flex items-center p-3 w-full h-24 bg-white rounded-md shadow-lg">
+                      <section className="flex justify-center items-center w-12 h-12 rounded-full shadow-md bg-gradient-to-r from-[#F9C97C] to-[#A2E9C1] hover:from-[#C9A9E9] hover:to-[#7EE7FC] hover:cursor-pointer hover:scale-110 duration-300 overflow-hidden flex-shrink-0">
+                        <img 
+                          src={participant.avatar || "/images/default.png"}
+                          alt={participant.name}
+                          className="w-10 h-10 rounded-full object-cover"
+                        />
+                      </section>
+
+                      <section className="block border-l border-gray-300 m-2 flex-1 min-w-0">
+                        <div className="pl-2">
+                          <h3 className="text-gray-600 font-semibold text-xs flex items-center gap-1 truncate">
+                            {participant.name}
+                            {participant.type === 'guest' && (
+                              <span className="px-1 py-0.5 border border-orange-500 text-orange-500 rounded-full text-xs bg-transparent flex-shrink-0">
+                                Guest
+                              </span>
+                            )}
+                          </h3>
+                          <h3 className="text-sm font-bold truncate">
+                            <span className={getRoleColor(participant.meetingRole)}>{participant.meetingRole}</span>
+                            <span className="text-gray-600"> - {getClassValue(participant.meetingClass as any)}</span>
+                          </h3>
+                        </div>
+                        <div className="flex gap-1 pt-1 pl-2">
+                          {participant.allClasses.slice(0, 3).map((classCode, index) => (
+                            <img 
+                              key={index}
+                              src={getClassIcon(classCode as any)} 
+                              alt={classCode}
+                              className="w-6 h-6 hover:scale-125 duration-200 hover:cursor-pointer flex-shrink-0"
+                              title={classCode}
+                            />
+                          ))}
+                        </div>
+                      </section>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              )}
+              
+              {/* Drag and drop status indicator */}
+              {isDraggingEnabled && (
+                <div className="mt-4 text-center">
+                  <p className="text-amber-200 text-sm">
+                    💡 Kéo và thả thẻ để hoán đổi vị trí các thành viên
+                    {isUpdatingPositions && <span className="ml-2">🔄 Đang cập nhật...</span>}
+                  </p>
+                </div>
+              )}
             </div>
           )}
 

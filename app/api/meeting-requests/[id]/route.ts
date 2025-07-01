@@ -54,6 +54,17 @@ export async function PUT(
       )
     }
 
+    // Ensure positions are set for all participants and guests
+    const participantsWithPositions = (body.participants || []).map((participant: any, index: number) => ({
+      ...participant,
+      position: participant.position ?? index
+    }))
+
+    const guestsWithPositions = (body.temporaryGuests || []).map((guest: any, index: number) => ({
+      ...guest,
+      position: guest.position ?? (participantsWithPositions.length + index)
+    }))
+
     // Prepare update data
     const updateData = {
       title: body.title.trim(),
@@ -61,8 +72,8 @@ export async function PUT(
       date: body.date,
       time: body.time,
       status: body.status,
-      participants: body.participants || [],
-      temporaryGuests: body.temporaryGuests || []
+      participants: participantsWithPositions,
+      temporaryGuests: guestsWithPositions
     }
     
     const meetingRequest = await MeetingRequest.findByIdAndUpdate(

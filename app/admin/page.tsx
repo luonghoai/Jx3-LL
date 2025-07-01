@@ -36,6 +36,7 @@ interface MeetingParticipant {
   discordUid?: string
   meetingRole: string
   meetingClass: string
+  position?: number
 }
 
 interface TemporaryGuest {
@@ -47,6 +48,7 @@ interface TemporaryGuest {
   meetingRole: string
   meetingClass: string
   avatar?: string
+  position?: number
 }
 
 interface MeetingRequest {
@@ -495,7 +497,8 @@ function AdminPageContent() {
         name: selectedMember.name,
         discordUid: selectedMember.discordUid,
         meetingRole: role,
-        meetingClass: classValue
+        meetingClass: classValue,
+        position: meetingForm.participants.length + meetingForm.temporaryGuests.length
       }
       setMeetingForm(prev => ({
         ...prev,
@@ -519,6 +522,7 @@ function AdminPageContent() {
       meetingRole: guestData.roles[0] || '',
       meetingClass: guestData.classes[0] || '',
       avatar: guestData.avatar,
+      position: meetingForm.participants.length + meetingForm.temporaryGuests.length
     }
     setMeetingForm(prev => ({
       ...prev,
@@ -566,12 +570,13 @@ function AdminPageContent() {
     }
 
     const allActiveMembers = teamMembers.filter(m => m.isActive)
-    const newParticipants: MeetingParticipant[] = allActiveMembers.map(member => ({
+    const newParticipants: MeetingParticipant[] = allActiveMembers.map((member, index) => ({
       memberId: member._id,
       name: member.name,
       discordUid: member.discordUid,
       meetingRole: member.roles[0] || 'DPS', // Use first role as default
-      meetingClass: member.classes[0] || 'BD' // Use first class as default
+      meetingClass: member.classes[0] || 'BD', // Use first class as default
+      position: index
     }))
 
     setMeetingForm(prev => ({
@@ -587,11 +592,21 @@ function AdminPageContent() {
       return
     }
 
-    // Copy participants from the selected meeting
+    // Copy participants from the selected meeting with updated positions
+    const participantsWithPositions = meeting.participants.map((participant, index) => ({
+      ...participant,
+      position: participant.position ?? index
+    }))
+
+    const guestsWithPositions = meeting.temporaryGuests.map((guest, index) => ({
+      ...guest,
+      position: guest.position ?? (meeting.participants.length + index)
+    }))
+
     setMeetingForm(prev => ({
       ...prev,
-      participants: [...meeting.participants],
-      temporaryGuests: [...meeting.temporaryGuests]
+      participants: participantsWithPositions,
+      temporaryGuests: guestsWithPositions
     }))
   }
 

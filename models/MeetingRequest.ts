@@ -20,6 +20,10 @@ const meetingParticipantSchema = new mongoose.Schema({
   meetingClass: {
     type: String,
     required: true
+  },
+  position: {
+    type: Number,
+    default: 0
   }
 })
 
@@ -51,6 +55,10 @@ const temporaryGuestSchema = new mongoose.Schema({
   meetingClass: {
     type: String,
     required: true
+  },
+  position: {
+    type: Number,
+    default: 0
   }
 })
 
