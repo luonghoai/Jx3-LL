@@ -65,6 +65,17 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Ensure positions are set for all participants and guests
+    const participantsWithPositions = (body.participants || []).map((participant: any, index: number) => ({
+      ...participant,
+      position: participant.position ?? index
+    }))
+
+    const guestsWithPositions = (body.temporaryGuests || []).map((guest: any, index: number) => ({
+      ...guest,
+      position: guest.position ?? (participantsWithPositions.length + index)
+    }))
+
     // Create new meeting request
     const meetingRequest = new MeetingRequest({
       title: body.title.trim(),
@@ -72,8 +83,8 @@ export async function POST(request: NextRequest) {
       date: body.date,
       time: body.time,
       status: body.status || 'draft',
-      participants: body.participants || [],
-      temporaryGuests: body.temporaryGuests || [],
+      participants: participantsWithPositions,
+      temporaryGuests: guestsWithPositions,
       isActive: true
     })
     

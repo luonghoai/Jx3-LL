@@ -7,6 +7,8 @@ A modern web application for managing team members who will join meetings, built
 ### Current Features
 - **Team Member Management**: Add, edit, and remove team members
 - **Admin Panel**: Full CRUD operations for team member data
+- **Meeting Management**: Create and manage meeting requests with participants
+- **Drag and Drop**: Reorder participant cards in the grid layout
 - **Responsive Design**: Modern UI built with Tailwind CSS and Shadcn UI
 - **MongoDB Integration**: Persistent data storage with Mongoose ODM
 - **TypeScript**: Full type safety throughout the application
@@ -24,6 +26,7 @@ A modern web application for managing team members who will join meetings, built
 - **Styling**: Tailwind CSS, Shadcn UI, Radix UI
 - **Database**: MongoDB with Mongoose ODM
 - **Icons**: Lucide React
+- **Drag and Drop**: @dnd-kit/core, @dnd-kit/sortable
 - **Future**: Discord.js for bot integration
 
 ## Prerequisites
@@ -94,6 +97,14 @@ team-meeting-app/
 - `PUT /api/team-members/[id]` - Update a team member
 - `DELETE /api/team-members/[id]` - Soft delete a team member
 
+### Meeting Requests
+- `GET /api/meeting-requests` - Get all active meeting requests
+- `POST /api/meeting-requests` - Create a new meeting request
+- `GET /api/meeting-requests/[id]` - Get a specific meeting request
+- `PUT /api/meeting-requests/[id]` - Update a meeting request
+- `PATCH /api/meeting-requests/[id]` - Update meeting status
+- `PATCH /api/meeting-requests/[id]/positions` - Update participant positions (drag and drop)
+
 ## Database Schema
 
 ### TeamMember Model
@@ -126,6 +137,14 @@ interface ITeamMember {
 3. Edit existing members by clicking the edit icon
 4. Delete members (soft delete) using the delete icon
 5. View statistics and member counts
+
+### Drag and Drop Participant Management
+1. Navigate to the main page where participants are displayed
+2. Click and drag any participant card to swap it with another card
+3. Release to complete the swap
+4. The new positions are automatically saved to the database
+
+**Note**: Drag and drop is only enabled when there are 25 or fewer participants (5x5 grid maximum) and on larger screens where the grid layout is stable.
 
 ## Future Discord Integration
 

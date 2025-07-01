@@ -164,4 +164,54 @@
     0 0 128px #ff3300;
   letter-spacing: 0.1em;
   filter: brightness(1.2);
+}
+
+/* Drag and drop styles */
+.dragging {
+  opacity: 0.5;
+  transform: rotate(5deg);
+  z-index: 1000;
+  transition: none !important;
+}
+
+.drag-overlay {
+  background: rgba(255, 255, 255, 0.9);
+  border: 2px dashed #3b82f6;
+  border-radius: 8px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+.sortable-card {
+  transition: all 0.3s ease;
+  user-select: none;
+}
+
+.sortable-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.sortable-card:active {
+  transform: scale(0.98);
+}
+
+.sortable-card:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* Swap animation */
+.swap-target {
+  border: 2px dashed #10b981;
+  background-color: rgba(16, 185, 129, 0.1);
+  transform: scale(1.05);
+}
+
+/* Prevent movement during drag */
+.sortable-card[data-dragging="true"] {
+  transition: none !important;
+}
+
+.sortable-card[data-dragging="true"] * {
+  transition: none !important;
 } 
