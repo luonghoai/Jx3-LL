@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { getClassValue } from '@/lib/constants'
+import { getClassValue, getRoleDisplayValue } from '@/lib/constants'
 import { Plus, X, Edit } from 'lucide-react'
 
 interface TemporaryGuest {
@@ -43,7 +43,7 @@ export default function GuestManager({ guests, onAddGuest, onRemoveGuest, onUpda
         {guests.map((guest) => (
           <div key={guest.id} className="flex items-center gap-2 px-3 py-1 bg-orange-50 border border-orange-200 rounded-full text-xs">
             <span className="font-medium text-orange-800 truncate">{guest.name}</span>
-            <span className="px-2 py-0.5 bg-orange-100 text-orange-700 rounded-full">{guest.meetingRole}</span>
+                            <span className="px-2 py-0.5 bg-orange-100 text-orange-700 rounded-full">{getRoleDisplayValue(guest.meetingRole as any)}</span>
             <span className="px-2 py-0.5 bg-orange-100 text-orange-700 rounded-full">{getClassValue(guest.meetingClass as any)}</span>
             {onUpdateGuest && (
               <Button

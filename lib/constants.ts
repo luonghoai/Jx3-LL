@@ -47,11 +47,23 @@ export type MeetingFilterOption = typeof MEETING_FILTER_OPTIONS[keyof typeof MEE
 export const ROLE_OPTIONS = [
   'Tank',
   'DPS',
+  'DPS1',
   'Buff',
   'Boss'
 ] as const
 
 export type Role = typeof ROLE_OPTIONS[number]
+
+// Role display values mapping
+export const ROLE_DISPLAY_VALUES: Record<Role, string> = {
+  'Tank': 'Tank',
+  'DPS': 'DPS Ngoại',
+  'DPS1': 'DPS Nội',
+  'Buff': 'Buff',
+  'Boss': 'Lão Bản'
+} as const
+
+export type RoleDisplayValue = typeof ROLE_DISPLAY_VALUES[Role]
 
 // Class Options for Team Members with both code and value
 export const CLASS_OPTIONS = [
@@ -80,29 +92,30 @@ export const CLASS_OPTIONS = [
 export type ClassCode = typeof CLASS_OPTIONS[number]['code']
 export type ClassValue = typeof CLASS_OPTIONS[number]['value']
 
-// Relationship between Classes and Roles
-// One class can have one or many roles
+// Redefined relationship: One class can have one or many roles
+// Each member/guest will have one class and one corresponding role from that class
+// Boss role is default for all classes, so it's not explicitly defined
 export const CLASS_ROLE_RELATIONSHIP: Record<ClassCode, Role[]> = {
-  'BD': ['Boss', 'DPS'],
-  'DT': ['Boss', 'DPS', 'Buff'],
-  'TV': ['Boss', 'Tank', 'DPS'],
-  'DM': ['DPS', 'Boss'],
-  'TCM': ['Boss', 'DPS', 'Buff'],
-  'TD': ['DPS', 'Boss'],
-  'TS': ['Boss', 'DPS', 'Tank'],
-  'TK': ['Boss', 'DPS'],
-  'CB': ['Boss', 'DPS'],
-  'DT1': ['Boss', 'DPS'],
-  'DT2': ['Boss', 'DPS'],
-  'LTC': ['Boss', 'DPS'],
-  'MG': ['Boss', 'DPS', 'Tank'],
-  'BL': ['Boss', 'DPS'],
-  'TT': ['Boss', 'DPS', 'Buff'],
-  'TL': ['Boss', 'DPS', 'Tank'],
-  'VH': ['Boss', 'DPS', 'Buff'],
-  'ND': ['Boss', 'DPS', 'Buff'],
-  'VL': ['Boss', 'DPS'],
-  'DTT': ['Boss', 'DPS']
+  'BD': ['DPS'],
+  'DT': ['DPS1', 'Buff'],
+  'TV': ['Tank', 'DPS'],
+  'DM': ['DPS', 'DPS1'],
+  'TCM': ['DPS1', 'Buff'],
+  'TD': ['DPS', 'DPS1'],
+  'TS': ['DPS', 'Tank'],
+  'TK': ['DPS'],
+  'CB': ['DPS'],
+  'DT1': ['DPS'],
+  'DT2': ['DPS1'],
+  'LTC': ['DPS'],
+  'MG': ['DPS1', 'Tank'],
+  'BL': ['DPS'],
+  'TT': ['DPS1', 'Buff'],
+  'TL': ['DPS1', 'Tank'],
+  'VH': ['DPS1', 'Buff'],
+  'ND': ['DPS1', 'Buff'],
+  'VL': ['DPS'],
+  'DTT': ['DPS1']
 } as const
 
 // Helper functions to get class info
@@ -116,42 +129,211 @@ export const getClassCode = (value: ClassValue): ClassCode => {
   return classOption?.code || value as ClassCode
 }
 
+// Class icons mapping (from public/icons folder)
+// These are the general class icons, different from role-specific icons
+export const CLASS_ICONS: Record<ClassCode, string> = {
+  'BD': '/icons/BD.png',
+  'DT': '/icons/DT.png',
+  'TV': '/icons/TV.png',
+  'DM': '/icons/DM.png',
+  'TCM': '/icons/TCM.png',
+  'TD': '/icons/TD.png',
+  'TS': '/icons/TS.png',
+  'TK': '/icons/TK.png',
+  'CB': '/icons/CB.png',
+  'DT1': '/icons/DT1.png',
+  'DT2': '/icons/DT2.png',
+  'LTC': '/icons/LTC.png',
+  'MG': '/icons/MG.png',
+  'BL': '/icons/BL.png',
+  'TT': '/icons/TT.png',
+  'TL': '/icons/TL.png',
+  'VH': '/icons/VH.png',
+  'ND': '/icons/ND.png',
+  'VL': '/icons/VL.png',
+  'DTT': '/icons/DTT.png'
+} as const
+
+// Class-Role specific icon mapping (from public/logo folder)
+// Each class can have different icons for different roles
+// Boss role uses the current logo as default
+export const CLASS_ROLE_ICONS: Record<ClassCode, Partial<Record<Role, string>>> = {
+  'BD': {
+    'Boss': '/logo/badao.png',
+    'DPS': '/logo/badao.png'
+  },
+  'DT': {
+    'Boss': '/logo/beitianyaozong-dps.png',
+    'DPS1': '/logo/beitianyaozong-dps.png',
+    'Buff': '/logo/beitianyaozong-buff.png'
+  },
+  'TV': {
+    'Boss': '/logo/cangyun-dps.png',
+    'Tank': '/logo/cangyun-tank.png',
+    'DPS': '/logo/cangyun-dps.png'
+  },
+  'DM': {
+    'Boss': '/logo/cangyun-wai.png',
+    'DPS': '/logo/cangyun-wai.png',
+    'DPS1': '/logo/cangyun-nei.png'
+  },
+  'TCM': {
+    'Boss': '/logo/changge-dps.png',
+    'DPS1': '/logo/changge-dps.png',
+    'Buff': '/logo/changge-buff.png'
+  },
+  'TD': {
+    'Boss': '/logo/chunyang-wai.png',
+    'DPS': '/logo/chunyang-wai.png',
+    'DPS1': '/logo/chunyang-nei.png'
+  },
+  'TS': {
+    'Boss': '/logo/tiance-dps.png',
+    'DPS': '/logo/tiance-dps.png',
+    'Tank': '/logo/tiance-tank.png'
+  },
+  'TK': {
+    'Boss': '/logo/cangjian.png',
+    'DPS': '/logo/cangjian.png'
+  },
+  'CB': {
+    'Boss': '/logo/gaibang.png',
+    'DPS': '/logo/gaibang.png'
+  },
+  'DT1': {
+    'Boss': '/logo/daozong.png',
+    'DPS': '/logo/daozong.png'
+  },
+  'DT2': {
+    'Boss': '/logo/duanshi.png',
+    'DPS': '/logo/duanshi.png'
+  },
+  'LTC': {
+    'Boss': '/logo/lingxuege.png',
+    'DPS': '/logo/lingxuege.png'
+  },
+  'MG': {
+    'Boss': '/logo/mingjiao-dps.png',
+    'DPS': '/logo/mingjiao-dps.png',
+    'Tank': '/logo/mingjiao-tank.png'
+  },
+  'BL': {
+    'Boss': '/logo/penglai.png',
+    'DPS': '/logo/penglai.png'
+  },
+  'TT': {
+    'Boss': '/logo/qixiu-dps.png',
+    'DPS1': '/logo/qixiu-dps.png',
+    'Buff': '/logo/qixiu-buff.png'
+  },
+  'TL': {
+    'Boss': '/logo/shaolin-dps.png',
+    'DPS1': '/logo/shaolin-dps.png',
+    'Tank': '/logo/shaolin-tank.png'
+  },
+  'VH': {
+    'Boss': '/logo/wanhua-dps.png',
+    'DPS1': '/logo/wanhua-dps.png',
+    'Buff': '/logo/wanhua-buff.png'
+  },
+  'ND': {
+    'Boss': '/logo/wudu-dps.png',
+    'DPS1': '/logo/wudu-dps.png',
+    'Buff': '/logo/wudu-buff.png'
+  },
+  'VL': {
+    'Boss': '/logo/wanlingshanzhuang.png',
+    'DPS': '/logo/wanlingshanzhuang.png'
+  },
+  'DTT': {
+    'Boss': '/logo/yantianzong.png',
+    'DPS': '/logo/yantianzong.png'
+  }
+}
+
+// Function to get general class icon (from public/icons folder)
 export const getClassIcon = (classCode: ClassCode): string => {
-  // Map class codes to their corresponding icon files
-  const iconMap: Record<ClassCode, string> = {
-    'BD': '/logo/badao.png',
-    'DT': '/logo/beitianyaozong-dps.png',
-    'TV': '/logo/cangyun-dps.png',
-    'DM': '/logo/cangyun-wai.png',
-    'TCM': '/logo/changge-dps.png',
-    'TD': '/logo/chunyang-nei.png',
-    'TS': '/logo/tiance-dps.png',
-    'TK': '/logo/cangjian.png',
-    'CB': '/logo/gaibang.png',
-    'DT1': '/logo/daozong.png',
-    'DT2': '/logo/duanshi.png',
-    'LTC': '/logo/lingxuege.png',
-    'MG': '/logo/mingjiao-dps.png',
-    'BL': '/logo/penglai.png',
-    'TT': '/logo/qixiu-buff.png',
-    'TL': '/logo/shaolin-dps.png',
-    'VH': '/logo/wanhua-buff.png',
-    'ND': '/logo/wudu-buff.png',
-    'VL': '/logo/wanlingshanzhuang.png',
-    'DTT': '/logo/yantianzong.png'
+  return CLASS_ICONS[classCode] || '/icons/app-icon.svg'
+}
+
+// Function to get role-specific icon (from public/logo folder)
+export const getClassRoleIcon = (classCode: ClassCode, role: Role): string => {
+  const classIcons = CLASS_ROLE_ICONS[classCode]
+  if (!classIcons) {
+    return '/icons/app-icon.svg' // fallback to app icon
   }
   
-  return iconMap[classCode] || '/icons/app-icon.svg' // fallback to app icon
+  // Return role-specific icon if available, otherwise fallback to Boss icon
+  return classIcons[role] || classIcons['Boss'] || '/icons/app-icon.svg'
 }
 
+// Function to get class icon with fallback options
+export const getClassIconWithFallback = (classCode: ClassCode, role?: Role): string => {
+  // If role is specified, try to get role-specific icon first
+  if (role && role !== 'Boss') {
+    const roleIcon = getClassRoleIcon(classCode, role)
+    if (roleIcon && roleIcon !== '/icons/app-icon.svg') {
+      return roleIcon
+    }
+  }
+  
+  // Fallback to general class icon
+  return getClassIcon(classCode)
+}
+
+// Get available roles for a specific class (Boss is always available)
 export const getAvailableRolesForClass = (classCode: ClassCode): Role[] => {
-  return CLASS_ROLE_RELATIONSHIP[classCode] || []
+  const explicitRoles = CLASS_ROLE_RELATIONSHIP[classCode] || []
+  return ['Boss', ...explicitRoles]
 }
 
+// Get available classes for a specific role
 export const getAvailableClassesForRole = (role: Role): ClassCode[] => {
+  if (role === 'Boss') {
+    // Boss is available for all classes
+    return CLASS_OPTIONS.map(cls => cls.code as ClassCode)
+  }
+  
   return Object.entries(CLASS_ROLE_RELATIONSHIP)
     .filter(([_, roles]) => roles.includes(role))
     .map(([code]) => code as ClassCode)
+}
+
+// Get default role for a class (Boss is always the default)
+export const getDefaultRoleForClass = (classCode: ClassCode): Role => {
+  return 'Boss'
+}
+
+// Get default class for a role (first available class)
+export const getDefaultClassForRole = (role: Role): ClassCode | null => {
+  const classes = getAvailableClassesForRole(role)
+  return classes.length > 0 ? classes[0] : null
+}
+
+// Validate if a role is valid for a class
+export const isValidRoleForClass = (role: Role, classCode: ClassCode): boolean => {
+  if (role === 'Boss') {
+    return true // Boss is valid for all classes
+  }
+  return CLASS_ROLE_RELATIONSHIP[classCode]?.includes(role) || false
+}
+
+// Validate if a class is valid for a role
+export const isValidClassForRole = (classCode: ClassCode, role: Role): boolean => {
+  if (role === 'Boss') {
+    return true // All classes are valid for Boss
+  }
+  return CLASS_ROLE_RELATIONSHIP[classCode]?.includes(role) || false
+}
+
+// Helper functions to get role display values
+export const getRoleDisplayValue = (role: Role): string => {
+  return ROLE_DISPLAY_VALUES[role] || role
+}
+
+export const getRoleFromDisplayValue = (displayValue: string): Role | null => {
+  const entry = Object.entries(ROLE_DISPLAY_VALUES).find(([_, value]) => value === displayValue)
+  return entry ? (entry[0] as Role) : null
 }
 
 // UI Configuration

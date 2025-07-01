@@ -284,7 +284,7 @@ export default function MemberFormModal({
           </div>
 
           {/* Roles Field */}
-          <div>
+          {/* <div>
             <label className="block text-sm font-medium mb-2">Vai trò *</label>
             <div className="mb-2">
               <Select value={selectedRole} onValueChange={handleRoleChange}>
@@ -316,7 +316,7 @@ export default function MemberFormModal({
                 </span>
               ))}
             </div>
-          </div>
+          </div> */}
 
           {/* Classes Field */}
           <div>

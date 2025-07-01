@@ -4,7 +4,21 @@ import React, { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { ROLE_OPTIONS, CLASS_OPTIONS, getAvailableRolesForClass, getAvailableClassesForRole, getClassValue, getClassCode } from '@/lib/constants'
+import { 
+  ROLE_OPTIONS, 
+  CLASS_OPTIONS, 
+  getAvailableRolesForClass, 
+  getAvailableClassesForRole, 
+  getClassValue, 
+  getClassCode,
+  getDefaultRoleForClass,
+  getDefaultClassForRole,
+  isValidRoleForClass,
+  isValidClassForRole,
+  getRoleDisplayValue,
+  type Role,
+  type ClassCode
+} from '@/lib/constants'
 
 interface TeamMember {
   _id: string
@@ -44,29 +58,59 @@ export default function MemberRoleModal({
 }: MemberRoleModalProps) {
   const [selectedRole, setSelectedRole] = useState('')
   const [selectedClass, setSelectedClass] = useState('')
-  const [availableRoles, setAvailableRoles] = useState<string[]>([...ROLE_OPTIONS])
-  const [availableClasses, setAvailableClasses] = useState<string[]>(CLASS_OPTIONS.map(cls => cls.code))
+  const [availableRoles, setAvailableRoles] = useState<Role[]>([])
+  const [availableClasses, setAvailableClasses] = useState<ClassCode[]>([])
 
   // Reset to defaults when modal opens
   useEffect(() => {
     if (isOpen) {
-      setSelectedRole('')
-      setSelectedClass('')
-      setAvailableRoles([...ROLE_OPTIONS])
-      setAvailableClasses(CLASS_OPTIONS.map(cls => cls.code))
+      // Set initial values if provided
+      if (initialClass && initialRole) {
+        // Validate that the initial role is valid for the initial class
+        if (isValidRoleForClass(initialRole as Role, initialClass as ClassCode)) {
+          setSelectedClass(initialClass)
+          setSelectedRole(initialRole)
+          setAvailableRoles(getAvailableRolesForClass(initialClass as ClassCode))
+          setAvailableClasses(getAvailableClassesForRole(initialRole as Role))
+        } else {
+          // If invalid combination, set class first and get available roles
+          setSelectedClass(initialClass)
+          setSelectedRole('')
+          setAvailableRoles(getAvailableRolesForClass(initialClass as ClassCode))
+          setAvailableClasses(CLASS_OPTIONS.map(cls => cls.code as ClassCode))
+        }
+      } else if (initialClass) {
+        // Only class provided
+        setSelectedClass(initialClass)
+        setSelectedRole('')
+        setAvailableRoles(getAvailableRolesForClass(initialClass as ClassCode))
+        setAvailableClasses(CLASS_OPTIONS.map(cls => cls.code as ClassCode))
+      } else if (initialRole) {
+        // Only role provided
+        setSelectedRole(initialRole)
+        setSelectedClass('')
+        setAvailableClasses(getAvailableClassesForRole(initialRole as Role))
+        setAvailableRoles([...ROLE_OPTIONS])
+      } else {
+        // No initial values
+        setSelectedRole('')
+        setSelectedClass('')
+        setAvailableRoles([...ROLE_OPTIONS])
+        setAvailableClasses(CLASS_OPTIONS.map(cls => cls.code as ClassCode))
+      }
     }
-  }, [isOpen])
+  }, [isOpen, initialRole, initialClass])
 
   // Update available options based on selection
   useEffect(() => {
     if (selectedClass) {
       // When class is selected, filter roles to only show available ones for that class
-      const classCode = selectedClass as any
+      const classCode = selectedClass as ClassCode
       const rolesForClass = getAvailableRolesForClass(classCode)
       setAvailableRoles(rolesForClass)
       
       // If current role is not available for selected class, clear it
-      if (selectedRole && !rolesForClass.includes(selectedRole as any)) {
+      if (selectedRole && !rolesForClass.includes(selectedRole as Role)) {
         setSelectedRole('')
       }
     } else {
@@ -75,15 +119,15 @@ export default function MemberRoleModal({
 
     if (selectedRole) {
       // When role is selected, filter classes to only show available ones for that role
-      const classesForRole = getAvailableClassesForRole(selectedRole as any)
+      const classesForRole = getAvailableClassesForRole(selectedRole as Role)
       setAvailableClasses(classesForRole)
       
       // If current class is not available for selected role, clear it
-      if (selectedClass && !classesForRole.includes(selectedClass as any)) {
+      if (selectedClass && !classesForRole.includes(selectedClass as ClassCode)) {
         setSelectedClass('')
       }
     } else {
-      setAvailableClasses(CLASS_OPTIONS.map(cls => cls.code))
+      setAvailableClasses(CLASS_OPTIONS.map(cls => cls.code as ClassCode))
     }
   }, [selectedRole, selectedClass])
 
@@ -118,11 +162,16 @@ export default function MemberRoleModal({
               <SelectContent>
                 {availableRoles.map((role) => (
                   <SelectItem key={role} value={role}>
-                    {role}
+                    {getRoleDisplayValue(role)}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
+            {selectedClass && availableRoles.length > 0 && (
+              <p className="text-xs text-gray-500 mt-1">
+                Môn phái {getClassValue(selectedClass as ClassCode)} có thể đảm nhận: {availableRoles.map(role => getRoleDisplayValue(role)).join(', ')}
+              </p>
+            )}
           </div>
 
           <div>
@@ -134,13 +183,12 @@ export default function MemberRoleModal({
               <SelectContent>
                 {availableClasses.map((classCode) => (
                   <SelectItem key={classCode} value={classCode}>
-                    {getClassValue(classCode as any)} ({classCode})
+                    {getClassValue(classCode)} ({classCode})
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
-
           <div className="flex gap-2 pt-4">
             <Button
               onClick={handleSave}
