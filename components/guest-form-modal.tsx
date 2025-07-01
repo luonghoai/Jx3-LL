@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Hash } from 'lucide-react'
-import { ROLE_OPTIONS, CLASS_OPTIONS, getAvailableRolesForClass, getAvailableClassesForRole, getClassValue } from '@/lib/constants'
+import { ROLE_OPTIONS, CLASS_OPTIONS, getAvailableRolesForClass, getAvailableClassesForRole, getClassValue, getRoleDisplayValue } from '@/lib/constants'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { fetchDiscordUser, getDiscordAvatarUrl, getDiscordDisplayName, type DiscordUser } from '@/lib/discord'
 
@@ -270,7 +270,7 @@ export default function GuestFormModal({
               <SelectContent>
                 {availableRoles.map((role) => (
                   <SelectItem key={role} value={role}>
-                    {role}
+                    {getRoleDisplayValue(role as any)}
                   </SelectItem>
                 ))}
               </SelectContent>

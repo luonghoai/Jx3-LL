@@ -16,6 +16,10 @@ import {
   MEETING_FILTER_OPTIONS,
   type MeetingFilterOption,
   getClassValue,
+  getDefaultRoleForClass,
+  getDefaultClassForRole,
+  getAvailableRolesForClass,
+  getRoleDisplayValue,
 } from '@/lib/constants'
 
 interface TeamMember {
@@ -513,14 +517,20 @@ function AdminPageContent() {
       alert('Tối đa 25 thành viên (bao gồm khách mời) cho mỗi lịch bí cảnh')
       return
     }
+    
+    // Get the first class from guest's classes, or use 'BD' as default
+    const guestClass = (guestData.classes[0] || 'BD') as any
+    // Get the default role for that class (always 'Boss')
+    const defaultRole = getDefaultRoleForClass(guestClass)
+    
     const newGuest: TemporaryGuest = {
       id: `guest_${Date.now()}`,
       name: guestData.name,
       discordUid: guestData.discordUid,
       roles: guestData.roles,
       classes: guestData.classes,
-      meetingRole: guestData.roles[0] || '',
-      meetingClass: guestData.classes[0] || '',
+      meetingRole: defaultRole,
+      meetingClass: guestClass,
       avatar: guestData.avatar,
       position: meetingForm.participants.length + meetingForm.temporaryGuests.length
     }
@@ -570,14 +580,21 @@ function AdminPageContent() {
     }
 
     const allActiveMembers = teamMembers.filter(m => m.isActive)
-    const newParticipants: MeetingParticipant[] = allActiveMembers.map((member, index) => ({
-      memberId: member._id,
-      name: member.name,
-      discordUid: member.discordUid,
-      meetingRole: member.roles[0] || 'DPS', // Use first role as default
-      meetingClass: member.classes[0] || 'BD', // Use first class as default
-      position: index
-    }))
+    const newParticipants: MeetingParticipant[] = allActiveMembers.map((member, index) => {
+      // Get the first class from member's classes, or use 'BD' as default
+      const memberClass = (member.classes[0] || 'BD') as any
+      // Get the default role for that class (always 'Boss')
+      const defaultRole = getDefaultRoleForClass(memberClass)
+      
+      return {
+        memberId: member._id,
+        name: member.name,
+        discordUid: member.discordUid,
+        meetingRole: defaultRole,
+        meetingClass: memberClass,
+        position: index
+      }
+    })
 
     setMeetingForm(prev => ({
       ...prev,
@@ -1023,6 +1040,8 @@ function AdminPageContent() {
                             return 'text-blue-600'
                           case 'DPS':
                             return 'text-red-600'
+                          case 'DPS1':
+                            return 'text-indigo-600'
                           case 'Buff':
                             return 'text-green-600'
                           case 'Boss':
@@ -1041,9 +1060,9 @@ function AdminPageContent() {
                             </AvatarFallback>
                           </Avatar>
                           <span className="font-medium text-blue-900 truncate">{participant.name}</span>
-                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getRoleTextColor(participant.meetingRole)}`}>
-                            {participant.meetingRole}
-                          </span>
+                                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getRoleTextColor(participant.meetingRole)}`}>
+                  {getRoleDisplayValue(participant.meetingRole as any)}
+                </span>
                           <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full">{getClassValue(participant.meetingClass as any)}</span>
                           <Button
                             size="icon"
@@ -1084,7 +1103,7 @@ function AdminPageContent() {
                 />
 
                 {/* Summary Stats */}
-                <div className="grid grid-cols-5 gap-2 p-3 bg-gray-50 rounded">
+                <div className="grid grid-cols-6 gap-2 p-3 bg-gray-50 rounded">
                   <div className="text-center">
                     <div className="text-lg font-bold">{meetingForm.participants.length + meetingForm.temporaryGuests.length}</div>
                     <div className="text-xs text-gray-600">Tổng</div>
@@ -1093,25 +1112,31 @@ function AdminPageContent() {
                     <div className="text-lg font-bold text-blue-600">
                       {[...meetingForm.participants, ...meetingForm.temporaryGuests].filter(p => p.meetingRole === 'Tank').length}
                     </div>
-                    <div className="text-xs text-gray-600">Tank</div>
+                    <div className="text-xs text-gray-600">{getRoleDisplayValue('Tank')}</div>
                   </div>
                   <div className="text-center">
                     <div className="text-lg font-bold text-red-600">
                       {[...meetingForm.participants, ...meetingForm.temporaryGuests].filter(p => p.meetingRole === 'DPS').length}
                     </div>
-                    <div className="text-xs text-gray-600">DPS</div>
+                    <div className="text-xs text-gray-600">{getRoleDisplayValue('DPS')}</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-lg font-bold text-indigo-600">
+                      {[...meetingForm.participants, ...meetingForm.temporaryGuests].filter(p => p.meetingRole === 'DPS1').length}
+                    </div>
+                    <div className="text-xs text-gray-600">{getRoleDisplayValue('DPS1')}</div>
                   </div>
                   <div className="text-center">
                     <div className="text-lg font-bold text-green-600">
                       {[...meetingForm.participants, ...meetingForm.temporaryGuests].filter(p => p.meetingRole === 'Buff').length}
                     </div>
-                    <div className="text-xs text-gray-600">Buff</div>
+                    <div className="text-xs text-gray-600">{getRoleDisplayValue('Buff')}</div>
                   </div>
                   <div className="text-center">
                     <div className="text-lg font-bold text-purple-600">
                       {[...meetingForm.participants, ...meetingForm.temporaryGuests].filter(p => p.meetingRole === 'Boss').length}
                     </div>
-                    <div className="text-xs text-gray-600">Lão Bản</div>
+                    <div className="text-xs text-gray-600">{getRoleDisplayValue('Boss')}</div>
                   </div>
                 </div>
 
@@ -1227,6 +1252,8 @@ function AdminPageContent() {
                                     return 'text-blue-600'
                                   case 'DPS':
                                     return 'text-red-600'
+                                  case 'DPS1':
+                                    return 'text-indigo-600'
                                   case 'Buff':
                                     return 'text-green-600'
                                   case 'Boss':
@@ -1242,7 +1269,7 @@ function AdminPageContent() {
                                   className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs"
                                   title={`${participant.meetingRole} • ${participant.meetingClass}`}
                                 >
-                                  {participant.name} - <span className={`font-semibold ${getRoleTextColor(participant.meetingRole)}`}>{participant.meetingRole}</span> - {getClassValue(participant.meetingClass as any)}
+                                  {participant.name} - <span className={`font-semibold ${getRoleTextColor(participant.meetingRole)}`}>{getRoleDisplayValue(participant.meetingRole as any)}</span> - {getClassValue(participant.meetingClass as any)}
                                 </span>
                               )
                             })}
@@ -1253,6 +1280,8 @@ function AdminPageContent() {
                                     return 'text-blue-600'
                                   case 'DPS':
                                     return 'text-red-600'
+                                  case 'DPS1':
+                                    return 'text-indigo-600'
                                   case 'Buff':
                                     return 'text-green-600'
                                   case 'Boss':
@@ -1268,7 +1297,7 @@ function AdminPageContent() {
                                   className="px-2 py-1 bg-orange-100 text-orange-800 rounded text-xs"
                                   title={`${guest.meetingRole} • ${guest.meetingClass} (Guest)`}
                                 >
-                                  {guest.name} - <span className={`font-semibold ${getRoleTextColor(guest.meetingRole)}`}>{guest.meetingRole}</span> - {getClassValue(guest.meetingClass as any)} (G)
+                                  {guest.name} - <span className={`font-semibold ${getRoleTextColor(guest.meetingRole)}`}>{getRoleDisplayValue(guest.meetingRole as any)}</span> - {getClassValue(guest.meetingClass as any)} (G)
                                 </span>
                               )
                             })}

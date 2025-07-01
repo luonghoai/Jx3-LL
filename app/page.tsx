@@ -6,7 +6,7 @@ import { Button } from '../components/ui/button'
 import { Card, CardContent } from '../components/ui/card'
 import { Input } from '../components/ui/input'
 import { Users, Settings, Search, Calendar, Clock, MapPin } from 'lucide-react'
-import { getClassIcon, getClassValue } from '@/lib/constants'
+import { getClassRoleIcon, getClassIcon, getClassValue, getRoleDisplayValue } from '@/lib/constants'
 import {
   DndContext,
   closestCenter,
@@ -124,12 +124,21 @@ function SortableParticipantCard({ participant, getRoleColor }: SortableParticip
       data-dragging={isDragging}
       className={`flex items-center p-3 w-full h-24 bg-white rounded-md shadow-lg cursor-move hover:shadow-xl transition-shadow sortable-card ${isDragging ? 'dragging' : ''}`}
     >
-      <section className="flex justify-center items-center w-12 h-12 rounded-full shadow-md bg-gradient-to-r from-[#F9C97C] to-[#A2E9C1] hover:from-[#C9A9E9] hover:to-[#7EE7FC] hover:scale-110 duration-300 overflow-hidden flex-shrink-0">
+      <section className="relative flex justify-center items-center w-12 h-12 rounded-full shadow-md bg-gradient-to-r from-[#F9C97C] to-[#A2E9C1] hover:from-[#C9A9E9] hover:to-[#7EE7FC] hover:scale-110 duration-300 flex-shrink-0">
         <img 
           src={participant.avatar || "/images/default.png"}
           alt={participant.name}
           className="w-10 h-10 rounded-full object-cover"
         />
+        {/* Meeting class icon at bottom right */}
+        <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-white rounded-full shadow-md border border-gray-200 flex items-center justify-center">
+          <img 
+            src={getClassRoleIcon(participant.meetingClass as any, participant.meetingRole as any)}
+            alt={participant.meetingClass}
+            className="w-4 h-4 object-contain"
+            title={getClassValue(participant.meetingClass as any)}
+          />
+        </div>
       </section>
 
       <section className="block border-l border-gray-300 m-2 flex-1 min-w-0">
@@ -143,7 +152,7 @@ function SortableParticipantCard({ participant, getRoleColor }: SortableParticip
             )}
           </h3>
           <h3 className="text-sm font-bold truncate">
-            <span className={getRoleColor(participant.meetingRole)}>{participant.meetingRole}</span>
+            <span className={getRoleColor(participant.meetingRole)}>{getRoleDisplayValue(participant.meetingRole as any)}</span>
             <span className="text-gray-600"> - {getClassValue(participant.meetingClass as any)}</span>
           </h3>
         </div>
@@ -151,10 +160,10 @@ function SortableParticipantCard({ participant, getRoleColor }: SortableParticip
           {participant.allClasses.slice(0, 3).map((classCode, index) => (
             <img 
               key={index}
-              src={getClassIcon(classCode as any)} 
-              alt={classCode}
-              className="w-6 h-6 hover:scale-125 duration-200 hover:cursor-pointer flex-shrink-0"
-              title={classCode}
+              src={getClassIcon(classCode as any)}
+              alt={getClassValue(classCode as any)}
+              className="w-6 h-6 hover:scale-125 duration-200 hover:cursor-pointer flex-shrink-0 invert"
+              title={getClassValue(classCode as any)}
             />
           ))}
         </div>
@@ -327,6 +336,8 @@ export default function HomePage() {
         return 'text-green-400'
       case 'DPS':
         return 'text-purple-400'
+      case 'DPS1':
+        return 'text-blue-400'
       case 'Buff':
         return 'text-yellow-400'
       case 'Boss':
@@ -497,7 +508,7 @@ export default function HomePage() {
           {/* Countdown Timer */}
           {lastMeeting && (
             <div className="mb-12">
-              <div className="grid grid-cols-4 gap-4 md:gap-8">
+              {/* <div className="grid grid-cols-4 gap-4 md:gap-8">
                 <div className="text-center">
                   <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20">
                     <div className="text-3xl md:text-5xl font-bold text-white mb-2">
@@ -530,7 +541,7 @@ export default function HomePage() {
                     <div className="text-sm md:text-base text-amber-200">Giây</div>
                   </div>
                 </div>
-              </div>
+              </div> */}
               
               {/* Meeting details */}
               <div className="mt-8 flex flex-wrap justify-center gap-4">
@@ -609,12 +620,21 @@ export default function HomePage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                   {filteredParticipants.map((participant) => (
                     <div key={participant.id} className="flex items-center p-3 w-full h-24 bg-white rounded-md shadow-lg">
-                      <section className="flex justify-center items-center w-12 h-12 rounded-full shadow-md bg-gradient-to-r from-[#F9C97C] to-[#A2E9C1] hover:from-[#C9A9E9] hover:to-[#7EE7FC] hover:cursor-pointer hover:scale-110 duration-300 overflow-hidden flex-shrink-0">
+                      <section className="relative flex justify-center items-center w-12 h-12 rounded-full shadow-md bg-gradient-to-r from-[#F9C97C] to-[#A2E9C1] hover:from-[#C9A9E9] hover:to-[#7EE7FC] hover:cursor-pointer hover:scale-110 duration-300 flex-shrink-0">
                         <img 
                           src={participant.avatar || "/images/default.png"}
                           alt={participant.name}
                           className="w-10 h-10 rounded-full object-cover"
                         />
+                        {/* Meeting class icon at bottom right */}
+                        <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-white rounded-full shadow-md border border-gray-200 flex items-center justify-center">
+                          <img 
+                            src={getClassRoleIcon(participant.meetingClass as any, participant.meetingRole as any)}
+                            alt={participant.meetingClass}
+                            className="w-4 h-4 object-contain"
+                            title={getClassValue(participant.meetingClass as any)}
+                          />
+                        </div>
                       </section>
 
                       <section className="block border-l border-gray-300 m-2 flex-1 min-w-0">
@@ -628,20 +648,9 @@ export default function HomePage() {
                             )}
                           </h3>
                           <h3 className="text-sm font-bold truncate">
-                            <span className={getRoleColor(participant.meetingRole)}>{participant.meetingRole}</span>
+                            <span className={getRoleColor(participant.meetingRole)}>{getRoleDisplayValue(participant.meetingRole as any)}</span>
                             <span className="text-gray-600"> - {getClassValue(participant.meetingClass as any)}</span>
                           </h3>
-                        </div>
-                        <div className="flex gap-1 pt-1 pl-2">
-                          {participant.allClasses.slice(0, 3).map((classCode, index) => (
-                            <img 
-                              key={index}
-                              src={getClassIcon(classCode as any)} 
-                              alt={classCode}
-                              className="w-6 h-6 hover:scale-125 duration-200 hover:cursor-pointer flex-shrink-0"
-                              title={classCode}
-                            />
-                          ))}
                         </div>
                       </section>
                     </div>
@@ -679,7 +688,7 @@ export default function HomePage() {
 
           {/* Summary Stats */}
           {lastMeeting && (
-            <div className="mt-12 grid grid-cols-1 md:grid-cols-5 gap-6 max-w-6xl mx-auto">
+            <div className="mt-12 grid grid-cols-1 md:grid-cols-6 gap-6 max-w-6xl mx-auto">
               <Card className="bg-white/10 backdrop-blur-sm border-white/20">
                 <CardContent className="p-6">
                   <div className="text-center">
@@ -696,7 +705,7 @@ export default function HomePage() {
                     <div className="text-2xl font-bold text-green-400">
                       {filteredParticipants.filter(p => p.meetingRole === 'Tank').length}
                     </div>
-                    <div className="text-sm text-white">Tank</div>
+                    <div className="text-sm text-white">{getRoleDisplayValue('Tank')}</div>
                   </div>
                 </CardContent>
               </Card>
@@ -706,7 +715,17 @@ export default function HomePage() {
                     <div className="text-2xl font-bold text-purple-400">
                       {filteredParticipants.filter(p => p.meetingRole === 'DPS').length}
                     </div>
-                    <div className="text-sm text-white">DPS</div>
+                    <div className="text-sm text-white">{getRoleDisplayValue('DPS')}</div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="bg-white/10 backdrop-blur-sm border-white/20">
+                <CardContent className="p-6">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-blue-400">
+                      {filteredParticipants.filter(p => p.meetingRole === 'DPS1').length}
+                    </div>
+                    <div className="text-sm text-white">{getRoleDisplayValue('DPS1')}</div>
                   </div>
                 </CardContent>
               </Card>
@@ -716,7 +735,7 @@ export default function HomePage() {
                     <div className="text-2xl font-bold text-yellow-400">
                       {filteredParticipants.filter(p => p.meetingRole === 'Buff').length}
                     </div>
-                    <div className="text-sm text-white">Buff</div>
+                    <div className="text-sm text-white">{getRoleDisplayValue('Buff')}</div>
                   </div>
                 </CardContent>
               </Card>
@@ -726,7 +745,7 @@ export default function HomePage() {
                     <div className="text-2xl font-bold text-red-400">
                       {filteredParticipants.filter(p => p.meetingRole === 'Boss').length}
                     </div>
-                    <div className="text-sm text-white">Lão Bản</div>
+                    <div className="text-sm text-white">{getRoleDisplayValue('Boss')}</div>
                   </div>
                 </CardContent>
               </Card>
