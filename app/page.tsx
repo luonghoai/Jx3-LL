@@ -151,7 +151,7 @@ function SortableParticipantCard({ participant, getRoleColor }: SortableParticip
               </span>
             )}
           </h3>
-          <h3 className="text-sm font-bold truncate">
+          <h3 className="text-[10px] font-bold truncate">
             <span className={getRoleColor(participant.meetingRole)}>{getRoleDisplayValue(participant.meetingRole as any)}</span>
             <span className="text-gray-600"> - {getClassValue(participant.meetingClass as any)}</span>
           </h3>
@@ -162,7 +162,7 @@ function SortableParticipantCard({ participant, getRoleColor }: SortableParticip
               key={index}
               src={getClassIcon(classCode as any)}
               alt={getClassValue(classCode as any)}
-              className="w-6 h-6 hover:scale-125 duration-200 hover:cursor-pointer flex-shrink-0 invert"
+              className="w-6 h-6 hover:scale-125 duration-200 hover:cursor-pointer flex-shrink-0"
               title={getClassValue(classCode as any)}
             />
           ))}
@@ -507,7 +507,7 @@ export default function HomePage() {
 
           {/* Countdown Timer */}
           {lastMeeting && (
-            <div className="mb-12">
+            <div className="mb-4">
               {/* <div className="grid grid-cols-4 gap-4 md:gap-8">
                 <div className="text-center">
                   <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20">
@@ -605,7 +605,7 @@ export default function HomePage() {
                     items={filteredParticipants.map(p => p.id)}
                     strategy={rectSortingStrategy}
                   >
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                       {filteredParticipants.map((participant) => (
                         <SortableParticipantCard
                           key={participant.id}
@@ -617,7 +617,7 @@ export default function HomePage() {
                   </SortableContext>
                 </DndContext>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                   {filteredParticipants.map((participant) => (
                     <div key={participant.id} className="flex items-center p-3 w-full h-24 bg-white rounded-md shadow-lg">
                       <section className="relative flex justify-center items-center w-12 h-12 rounded-full shadow-md bg-gradient-to-r from-[#F9C97C] to-[#A2E9C1] hover:from-[#C9A9E9] hover:to-[#7EE7FC] hover:cursor-pointer hover:scale-110 duration-300 flex-shrink-0">
@@ -639,15 +639,15 @@ export default function HomePage() {
 
                       <section className="block border-l border-gray-300 m-2 flex-1 min-w-0">
                         <div className="pl-2">
-                          <h3 className="text-gray-600 font-semibold text-xs flex items-center gap-1 truncate">
+                          <h2 className="text-gray-600 font-semibold text-xs flex items-center gap-1 truncate">
                             {participant.name}
                             {participant.type === 'guest' && (
                               <span className="px-1 py-0.5 border border-orange-500 text-orange-500 rounded-full text-xs bg-transparent flex-shrink-0">
                                 Guest
                               </span>
                             )}
-                          </h3>
-                          <h3 className="text-sm font-bold truncate">
+                          </h2>
+                          <h3 className="text-[10px] font-bold truncate">
                             <span className={getRoleColor(participant.meetingRole)}>{getRoleDisplayValue(participant.meetingRole as any)}</span>
                             <span className="text-gray-600"> - {getClassValue(participant.meetingClass as any)}</span>
                           </h3>
