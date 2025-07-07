@@ -11,7 +11,7 @@ import {
   getAvailableClassesForRole, 
   getClassValue, 
   getClassCode,
-  getDefaultRoleForClass,
+  getDefaultDPSRoleForClass,
   getDefaultClassForRole,
   isValidRoleForClass,
   isValidClassForRole,
@@ -80,11 +80,12 @@ export default function MemberRoleModal({
           setAvailableClasses(CLASS_OPTIONS.map(cls => cls.code as ClassCode))
         }
       } else if (initialClass) {
-        // Only class provided
+        // Only class provided - automatically set default DPS role
         setSelectedClass(initialClass)
-        setSelectedRole('')
+        const defaultDPSRole = getDefaultDPSRoleForClass(initialClass as ClassCode)
+        setSelectedRole(defaultDPSRole)
         setAvailableRoles(getAvailableRolesForClass(initialClass as ClassCode))
-        setAvailableClasses(CLASS_OPTIONS.map(cls => cls.code as ClassCode))
+        setAvailableClasses(getAvailableClassesForRole(defaultDPSRole))
       } else if (initialRole) {
         // Only role provided
         setSelectedRole(initialRole)
@@ -112,6 +113,12 @@ export default function MemberRoleModal({
       // If current role is not available for selected class, clear it
       if (selectedRole && !rolesForClass.includes(selectedRole as Role)) {
         setSelectedRole('')
+      }
+      
+      // If no role is selected, automatically set the default DPS role
+      if (!selectedRole) {
+        const defaultDPSRole = getDefaultDPSRoleForClass(classCode)
+        setSelectedRole(defaultDPSRole)
       }
     } else {
       setAvailableRoles([...ROLE_OPTIONS])

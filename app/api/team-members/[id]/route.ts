@@ -75,12 +75,10 @@ export async function PUT(
       )
     }
 
-    // Validate arrays
-    if (!Array.isArray(body.roles) || body.roles.length === 0) {
-      return NextResponse.json(
-        { error: 'At least one role is required' },
-        { status: 400 }
-      )
+    // Validate arrays and set default role if empty
+    let roles = body.roles
+    if (!Array.isArray(roles) || roles.length === 0) {
+      roles = ['Boss'] // Set default role as 'Boss'
     }
 
     if (!Array.isArray(body.classes) || body.classes.length === 0) {
@@ -94,7 +92,7 @@ export async function PUT(
     const updateData = {
       name: body.name.trim(),
       discordUid: body.discordUid?.trim() || undefined,
-      roles: body.roles,
+      roles: roles,
       classes: body.classes,
       avatar: body.avatar || undefined,
       lastUpdated: new Date()
