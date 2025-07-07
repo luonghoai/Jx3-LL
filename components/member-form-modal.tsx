@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Hash } from 'lucide-react'
-import { ROLE_OPTIONS, CLASS_OPTIONS, getAvailableRolesForClass, getAvailableClassesForRole, getClassValue, getClassCode } from '@/lib/constants'
+import { ROLE_OPTIONS, CLASS_OPTIONS, getAvailableRolesForClass, getAvailableClassesForRole, getClassValue, getClassCode, getRoleDisplayValue } from '@/lib/constants'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { fetchDiscordUser, getDiscordAvatarUrl, getDiscordDisplayName, type DiscordUser } from '@/lib/discord'
 
@@ -58,7 +58,7 @@ export default function MemberFormModal({
     if (editingMember) {
       setName(editingMember.name)
       setDiscordUid(editingMember.discordUid || '')
-      setRoles(editingMember.roles)
+      setRoles(editingMember.roles) // Load actual roles without default
       setClasses(editingMember.classes)
       setAvatar(editingMember.avatar || '')
       setDiscordUser(null)
@@ -132,10 +132,6 @@ export default function MemberFormModal({
       alert('Tên là bắt buộc')
       return
     }
-    if (roles.length === 0) {
-      alert('Ít nhất một vai trò là bắt buộc')
-      return
-    }
     if (classes.length === 0) {
       alert('Ít nhất một môn phái là bắt buộc')
       return
@@ -144,7 +140,7 @@ export default function MemberFormModal({
     onSave({
       name: name.trim(),
       discordUid: discordUid.trim() || undefined,
-      roles,
+      roles: roles, // Send actual roles array (API will handle default if empty)
       classes,
       avatar: avatar || undefined
     })
@@ -283,40 +279,42 @@ export default function MemberFormModal({
             />
           </div>
 
-          {/* Roles Field */}
-          {/* <div>
-            <label className="block text-sm font-medium mb-2">Vai trò *</label>
-            <div className="mb-2">
-              <Select value={selectedRole} onValueChange={handleRoleChange}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Chọn vai trò để thêm" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableRoles.map((role) => (
-                    <SelectItem key={role} value={role}>
-                      {role}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex flex-wrap gap-1">
-              {roles.map((role) => (
-                <span
-                  key={role}
-                  className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs"
-                >
-                  {role}
-                  <button
-                    onClick={() => handleRemoveRole(role)}
-                    className="hover:bg-blue-200 rounded-full p-0.5"
+          {/* Roles Field - Only show when editing */}
+          {editingMember && (
+            <div>
+              <label className="block text-sm font-medium mb-2">Vai trò</label>
+              <div className="mb-2">
+                <Select value={selectedRole} onValueChange={handleRoleChange}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Chọn vai trò để thêm" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableRoles.map((role) => (
+                      <SelectItem key={role} value={role}>
+                        {getRoleDisplayValue(role as any)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex flex-wrap gap-1">
+                {roles.map((role) => (
+                  <span
+                    key={role}
+                    className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs"
                   >
-                    ×
-                  </button>
-                </span>
-              ))}
+                    {getRoleDisplayValue(role as any)}
+                    <button
+                      onClick={() => handleRemoveRole(role)}
+                      className="hover:bg-blue-200 rounded-full p-0.5"
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+              </div>
             </div>
-          </div> */}
+          )}
 
           {/* Classes Field */}
           <div>

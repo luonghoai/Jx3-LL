@@ -16,7 +16,7 @@ import {
   MEETING_FILTER_OPTIONS,
   type MeetingFilterOption,
   getClassValue,
-  getDefaultRoleForClass,
+  getDefaultDPSRoleForClass,
   getDefaultClassForRole,
   getAvailableRolesForClass,
   getRoleDisplayValue,
@@ -520,8 +520,8 @@ function AdminPageContent() {
     
     // Get the first class from guest's classes, or use 'BD' as default
     const guestClass = (guestData.classes[0] || 'BD') as any
-    // Get the default role for that class (always 'Boss')
-    const defaultRole = getDefaultRoleForClass(guestClass)
+    // Get the default DPS role for that class
+    const defaultRole = getDefaultDPSRoleForClass(guestClass)
     
     const newGuest: TemporaryGuest = {
       id: `guest_${Date.now()}`,
@@ -583,8 +583,8 @@ function AdminPageContent() {
     const newParticipants: MeetingParticipant[] = allActiveMembers.map((member, index) => {
       // Get the first class from member's classes, or use 'BD' as default
       const memberClass = (member.classes[0] || 'BD') as any
-      // Get the default role for that class (always 'Boss')
-      const defaultRole = getDefaultRoleForClass(memberClass)
+      // Get the default DPS role for that class
+      const defaultRole = getDefaultDPSRoleForClass(memberClass)
       
       return {
         memberId: member._id,
@@ -847,7 +847,12 @@ function AdminPageContent() {
                             </Avatar>
                             <div className="flex-1 min-w-0">
                               <CardTitle className="text-lg truncate">{member.name}</CardTitle>
-                              <CardDescription className="truncate">{member.roles.join(', ')}</CardDescription>
+                              <CardDescription className="truncate">
+                                {member.roles.length > 0 
+                                  ? member.roles.map(role => getRoleDisplayValue(role as any)).join(', ')
+                                  : 'Boss'
+                                }
+                              </CardDescription>
                             </div>
                           </div>
                         </CardHeader>

@@ -304,6 +304,21 @@ export const getDefaultRoleForClass = (classCode: ClassCode): Role => {
   return 'Boss'
 }
 
+// Get default DPS role for a class (prioritizes DPS over DPS1)
+export const getDefaultDPSRoleForClass = (classCode: ClassCode): Role => {
+  const availableRoles = CLASS_ROLE_RELATIONSHIP[classCode] || []
+  
+  // Prioritize DPS over DPS1
+  if (availableRoles.includes('DPS')) {
+    return 'DPS'
+  } else if (availableRoles.includes('DPS1')) {
+    return 'DPS1'
+  }
+  
+  // Fallback to Boss if no DPS roles available
+  return 'Boss'
+}
+
 // Get default class for a role (first available class)
 export const getDefaultClassForRole = (role: Role): ClassCode | null => {
   const classes = getAvailableClassesForRole(role)
