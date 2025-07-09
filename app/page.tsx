@@ -431,29 +431,14 @@ export default function HomePage() {
     }
   }
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-amber-900 via-amber-800 to-black flex items-center justify-center">
-        <div className="flex-col gap-4 w-full flex items-center justify-center">
-          <div className="w-28 h-28 border-8 text-blue-400 text-4xl animate-spin border-gray-300 flex items-center justify-center border-t-blue-400 rounded-full">
-            <img 
-              src="/images/daithiet.webp" 
-              alt="Loading" 
-              className="w-16 h-16 animate-ping"
-            />
-          </div>
-          <p className="text-amber-100">Đang tải dữ liệu...</p>
-        </div>
-      </div>
-    )
-  }
+
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-amber-900 via-amber-800 to-black flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-green-900 via-green-800 to-black flex items-center justify-center">
         <div className="text-center">
           <p className="text-red-400 mb-4">Error: {error}</p>
-          <Button onClick={() => window.location.reload()} className="bg-amber-600 hover:bg-amber-700">
+          <Button onClick={() => window.location.reload()} className="bg-green-600 hover:bg-green-700">
             Thử lại
           </Button>
         </div>
@@ -463,17 +448,27 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen relative overflow-hidden">
-      {/* Full-screen background slideshow */}
+      {/* Full-screen background video */}
       <div className="fixed inset-0 z-0">
-        <div 
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat animate-pulse"
-          style={{
-            backgroundImage: `url('/images/ll.png')`,
-            animation: 'pulse 4s ease-in-out infinite'
-          }}
-        />
-        {/* Dark gradient overlay (tan to black) */}
-        <div className="absolute inset-0 bg-gradient-to-br from-amber-900/80 via-amber-800/70 to-black/90"></div>
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover"
+        >
+          <source src="/videos/bg.mp4" type="video/mp4" />
+          {/* Fallback background image if video fails to load */}
+          <div 
+            className="absolute inset-0 bg-cover bg-center bg-no-repeat animate-pulse"
+            style={{
+              backgroundImage: `url('/images/ll.png')`,
+              animation: 'pulse 4s ease-in-out infinite'
+            }}
+          />
+        </video>
+        {/* Dark gradient overlay (light green to black) */}
+        <div className="absolute inset-0 bg-gradient-to-br from-green-900/60 via-green-800/50 to-black/80"></div>
       </div>
 
       {/* Main content */}
@@ -482,31 +477,41 @@ export default function HomePage() {
         <div className="flex-1 flex flex-col justify-center items-center px-4 py-12">
           {/* Headline */}
           <div className="text-center mb-12">
-            {lastMeeting ? (
+            <h1 className="neon-text text-6xl md:text-8xl mb-2">
+              Lục Long
+            </h1>
+            {loading ? (
               <div className="space-y-6">
-                <h1 className="neon-text text-6xl md:text-8xl mb-2">
-                  Lục Long
-                </h1>
+                <h2 className="text-3xl md:text-5xl font-bold text-white mb-4 drop-shadow-2xl animate-pulse" 
+                    style={{ textShadow: '3px 3px 6px rgba(0,0,0,0.8)' }}>
+                  Đang tải...
+                </h2>
+                <p className="text-2xl md:text-3xl text-green-200 font-medium drop-shadow-lg animate-pulse">
+                  Đang tải thông tin bí cảnh
+                </p>
+              </div>
+            ) : lastMeeting ? (
+              <div className="space-y-6">
                 <h2 className="text-3xl md:text-5xl font-bold text-white mb-4 drop-shadow-2xl" 
                     style={{ textShadow: '3px 3px 6px rgba(0,0,0,0.8)' }}>
                   {lastMeeting.title}
                 </h2>
-                <p className="text-2xl md:text-3xl text-amber-200 font-medium drop-shadow-lg">
+                <p className="text-2xl md:text-3xl text-green-200 font-medium drop-shadow-lg">
                   {lastMeeting.description}
                 </p>
               </div>
             ) : (
               <div>
-                <h1 className="text-5xl md:text-7xl font-bold text-white mb-4 drop-shadow-2xl" 
+                <h2 className="text-3xl md:text-5xl font-bold text-white mb-4 drop-shadow-2xl" 
                     style={{ textShadow: '3px 3px 6px rgba(0,0,0,0.8)' }}>
                   Không có lịch bí cảnh
-                </h1>
+                </h2>
               </div>
             )}
           </div>
 
           {/* Countdown Timer */}
-          {lastMeeting && (
+          {!loading && lastMeeting && (
             <div className="mb-4">
               {/* <div className="grid grid-cols-4 gap-4 md:gap-8">
                 <div className="text-center">
@@ -564,13 +569,13 @@ export default function HomePage() {
           {/* Search Bar */}
           <div className="w-full max-w-2xl mb-8">
             <div className="relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-amber-200 h-5 w-5 z-10" />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-green-200 h-5 w-5 z-10" />
               <Input
                 type="text"
                 placeholder="Tìm kiếm theo tên, Discord UID, vai trò, hoặc môn phái..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-12 bg-white/10 backdrop-blur-sm border-white/20 text-white focus:bg-white/20 focus:border-amber-400 [&::placeholder]:text-white [&::placeholder]:opacity-100"
+                className="pl-12 bg-white/10 backdrop-blur-sm border-white/20 text-white focus:bg-white/20 focus:border-green-400 [&::placeholder]:text-white [&::placeholder]:opacity-100"
                 style={{
                   '--tw-placeholder-opacity': '1'
                 } as React.CSSProperties}
@@ -592,7 +597,20 @@ export default function HomePage() {
           </div>
 
           {/* Participants Grid */}
-          {lastMeeting && (
+          {loading ? (
+            <div className="max-w-7xl mx-auto">
+              <div className="flex-col gap-4 w-full flex items-center justify-center py-12">
+                <div className="w-16 h-16 border-4 text-green-400 text-2xl animate-spin border-gray-300 flex items-center justify-center border-t-green-400 rounded-full">
+                  <img 
+                    src="/images/daithiet.webp" 
+                    alt="Loading" 
+                    className="w-8 h-8 animate-ping"
+                  />
+                </div>
+                <p className="text-green-200 text-sm">Đang tải danh sách thành viên...</p>
+              </div>
+            </div>
+          ) : lastMeeting ? (
             <div className="max-w-7xl mx-auto">
               {isDraggingEnabled ? (
                 <DndContext
@@ -661,33 +679,33 @@ export default function HomePage() {
               {/* Drag and drop status indicator */}
               {isDraggingEnabled && (
                 <div className="mt-4 text-center">
-                  <p className="text-amber-200 text-sm">
+                  <p className="text-green-200 text-sm">
                     💡 Kéo và thả thẻ để hoán đổi vị trí các thành viên
                     {isUpdatingPositions && <span className="ml-2">🔄 Đang cập nhật...</span>}
                   </p>
                 </div>
               )}
             </div>
-          )}
+          ) : null}
 
           {/* No results message */}
-          {lastMeeting && filteredParticipants.length === 0 && searchTerm && (
+          {!loading && lastMeeting && filteredParticipants.length === 0 && searchTerm && (
             <div className="text-center py-8">
-              <p className="text-amber-200">Không tìm thấy thành viên phù hợp với "{searchTerm}"</p>
+              <p className="text-green-200">Không tìm thấy thành viên phù hợp với "{searchTerm}"</p>
             </div>
           )}
 
           {/* No meeting message */}
-          {!lastMeeting && (
+          {!loading && !lastMeeting && (
             <div className="text-center py-12">
-              <Users className="h-16 w-16 text-amber-200 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-amber-200 mb-2">Không có lịch bí cảnh</h3>
-              <p className="text-amber-100">Không có lịch bí cảnh để hiển thị.</p>
+              <Users className="h-16 w-16 text-green-200 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-green-200 mb-2">Không có lịch bí cảnh</h3>
+              <p className="text-green-100">Không có lịch bí cảnh để hiển thị.</p>
             </div>
           )}
 
           {/* Summary Stats */}
-          {lastMeeting && (
+          {!loading && lastMeeting && (
             <div className="mt-12 grid grid-cols-1 md:grid-cols-6 gap-6 max-w-6xl mx-auto">
               <Card className="bg-white/10 backdrop-blur-sm border-white/20">
                 <CardContent className="p-6">
