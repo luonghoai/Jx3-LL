@@ -457,7 +457,7 @@ export default function HomePage() {
           playsInline
           className="absolute inset-0 w-full h-full object-cover"
         >
-          <source src="/videos/bg.mp4" type="video/mp4" />
+          <source src="https://pic.pikbest.com/19/63/17/814888piC3Gw.mp4" type="video/mp4" />
           {/* Fallback background image if video fails to load */}
           <div 
             className="absolute inset-0 bg-cover bg-center bg-no-repeat animate-pulse"
