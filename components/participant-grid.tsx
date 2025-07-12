@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Edit, X, GripVertical } from 'lucide-react'
+import { Edit, X, GripVertical, Plus } from 'lucide-react'
 import {
   DndContext,
   closestCenter,
@@ -64,6 +64,7 @@ interface ParticipantGridProps {
   onUpdateGuest: (guestId: string, role: string, classValue: string) => void
   onRemoveGuest: (guestId: string) => void
   onUpdatePositions?: (participants: MeetingParticipant[], guests: TemporaryGuest[]) => void
+  onAddGuest?: () => void
 }
 
 interface SortableParticipantCardProps {
@@ -149,47 +150,47 @@ function SortableParticipantCard({ participant, onUpdate, onRemove }: SortablePa
 
       <div className="flex items-center w-full h-full">
         {/* Avatar with class icon - Left side */}
-        <div className="relative flex-shrink-0 mr-3">
-          <Avatar className="h-10 w-10">
+        <div className="relative flex-shrink-0 mr-4">
+          <Avatar className="h-12 w-12">
             <AvatarImage src={participant.avatar || "/images/default.png"} />
-            <AvatarFallback className="text-xs">
+            <AvatarFallback className="text-sm">
               {participant.name.split(' ').map(n => n[0]).join('')}
             </AvatarFallback>
           </Avatar>
           {/* Meeting class icon at bottom right */}
-          <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-white rounded-full shadow-md border border-gray-200 flex items-center justify-center">
+          <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-white rounded-full shadow-md border border-gray-200 flex items-center justify-center">
             <img 
               src={getClassRoleIcon(participant.meetingClass as any, participant.meetingRole as any)}
               alt={participant.meetingClass}
-              className="w-3 h-3 object-contain"
+              className="w-4 h-4 object-contain"
               title={getClassValue(participant.meetingClass as any)}
             />
           </div>
         </div>
 
         {/* Vertical separator line */}
-        <div className="w-px h-8 bg-gray-300 mx-2 flex-shrink-0"></div>
+        <div className="w-px h-10 bg-gray-300 mx-3 flex-shrink-0"></div>
 
         {/* Text information - Right side */}
         <div className="flex-1 min-w-0">
           {/* Name and Guest indicator */}
-          <div className="flex items-center gap-1 mb-1">
-            <h3 className="text-sm font-semibold text-gray-800 truncate">
+          <div className="flex items-center gap-2 mb-2">
+            <h3 className="text-base font-semibold text-gray-800 truncate">
               {participant.name}
             </h3>
             {participant.type === 'guest' && (
-              <span className="px-1 py-0.5 border border-orange-500 text-orange-500 rounded-full text-xs bg-transparent flex-shrink-0">
+              <span className="px-2 py-1 border border-orange-500 text-orange-500 rounded-full text-xs bg-transparent flex-shrink-0">
                 Guest
               </span>
             )}
           </div>
 
           {/* Role and Class */}
-          <div className="mb-2">
-            <div className={`text-xs font-bold ${getRoleColor(participant.meetingRole)}`}>
+          <div className="mb-1">
+            <div className={`text-sm font-bold ${getRoleColor(participant.meetingRole)}`}>
               {getRoleDisplayValue(participant.meetingRole as any)}
             </div>
-            <div className="text-xs text-gray-600">
+            <div className="text-sm text-gray-600">
               {getClassValue(participant.meetingClass as any)}
             </div>
           </div>
@@ -207,7 +208,8 @@ export default function ParticipantGrid({
   onRemoveParticipant,
   onUpdateGuest,
   onRemoveGuest,
-  onUpdatePositions
+  onUpdatePositions,
+  onAddGuest
 }: ParticipantGridProps) {
   const [isDraggingActive, setIsDraggingActive] = useState(false)
 
@@ -365,7 +367,19 @@ export default function ParticipantGrid({
                   />
                 ) : (
                   <div className="empty-slot">
-                    <span>Trống</span>
+                    {onAddGuest ? (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={onAddGuest}
+                        className="w-full h-full flex flex-col items-center justify-center gap-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                      >
+                        <Plus className="h-5 w-5" />
+                        <span className="text-sm">Thêm khách</span>
+                      </Button>
+                    ) : (
+                      <span>Trống</span>
+                    )}
                   </div>
                 )}
               </div>

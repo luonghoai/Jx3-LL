@@ -20,6 +20,7 @@ import {
   type Role,
   type ClassCode
 } from '@/lib/constants'
+import { matchesVietnameseSearch } from '@/lib/utils'
 
 interface TeamMember {
   _id: string
@@ -88,12 +89,11 @@ export default function MemberRoleModal({
           setAvailableClasses(CLASS_OPTIONS.map(cls => cls.code as ClassCode))
         }
       } else if (initialClass) {
-        // Only class provided - automatically set default DPS role
+        // Only class provided
         setSelectedClass(initialClass)
-        const defaultDPSRole = getDefaultDPSRoleForClass(initialClass as ClassCode)
-        setSelectedRole(defaultDPSRole)
+        setSelectedRole('')
         setAvailableRoles(getAvailableRolesForClass(initialClass as ClassCode))
-        setAvailableClasses(getAvailableClassesForRole(defaultDPSRole))
+        setAvailableClasses(CLASS_OPTIONS.map(cls => cls.code as ClassCode))
       } else if (initialRole) {
         // Only role provided
         setSelectedRole(initialRole)
@@ -121,12 +121,6 @@ export default function MemberRoleModal({
       // If current role is not available for selected class, clear it
       if (selectedRole && !rolesForClass.includes(selectedRole as Role)) {
         setSelectedRole('')
-      }
-      
-      // If no role is selected, automatically set the default DPS role
-      if (!selectedRole) {
-        const defaultDPSRole = getDefaultDPSRoleForClass(classCode)
-        setSelectedRole(defaultDPSRole)
       }
     } else {
       setAvailableRoles([...ROLE_OPTIONS])
@@ -156,17 +150,22 @@ export default function MemberRoleModal({
   // Handle click outside to close class list
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (searchInputRef.current && !searchInputRef.current.contains(event.target as Node)) {
+      // Check if click is within the search input or the dropdown
+      const target = event.target as Node
+      const isWithinInput = searchInputRef.current?.contains(target)
+      const isWithinDropdown = (event.target as Element)?.closest('.class-dropdown')
+      
+      if (!isWithinInput && !isWithinDropdown) {
         setShowClassList(false)
       }
     }
 
     if (showClassList) {
-      document.addEventListener('mousedown', handleClickOutside)
+      document.addEventListener('click', handleClickOutside)
     }
 
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('click', handleClickOutside)
     }
   }, [showClassList])
 
@@ -225,21 +224,32 @@ export default function MemberRoleModal({
                   ref={searchInputRef}
                   type="text"
                   placeholder="Tìm kiếm môn phái..."
-                  value={classFilter}
-                  onChange={(e) => setClassFilter(e.target.value)}
+                  value={selectedClass ? getClassValue(selectedClass as ClassCode) : classFilter}
+                  onChange={(e) => {
+                    const value = e.target.value
+                    setClassFilter(value)
+                    // If user is typing, clear the selected class
+                    if (selectedClass) {
+                      setSelectedClass('')
+                    }
+                  }}
                   onFocus={() => setShowClassList(true)}
-                  className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className={`w-full pl-10 pr-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    selectedClass 
+                      ? 'border-green-500 bg-green-50 text-green-700' 
+                      : 'border-gray-300'
+                  }`}
                 />
               </div>
               
               {/* Filtered class list */}
               {showClassList && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto z-10">
+                <div className="class-dropdown absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto z-10">
                   {(() => {
                     const filteredClasses = availableClasses.filter(classCode => {
                       if (!classFilter) return true
-                      const className = getClassValue(classCode).toLowerCase()
-                      return className.includes(classFilter.toLowerCase())
+                      const className = getClassValue(classCode)
+                      return matchesVietnameseSearch(className, classFilter)
                     })
                     
                     if (filteredClasses.length === 0 && classFilter) {
@@ -256,7 +266,7 @@ export default function MemberRoleModal({
                         className="px-3 py-2 hover:bg-gray-100 cursor-pointer text-sm"
                         onClick={() => {
                           setSelectedClass(classCode)
-                          setClassFilter(getClassValue(classCode))
+                          setClassFilter('')
                           setShowClassList(false)
                         }}
                       >

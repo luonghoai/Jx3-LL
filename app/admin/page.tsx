@@ -22,6 +22,7 @@ import {
   getAvailableRolesForClass,
   getRoleDisplayValue,
 } from '@/lib/constants'
+import { matchesVietnameseSearch } from '@/lib/utils'
 
 interface TeamMember {
   _id: string
@@ -125,10 +126,10 @@ function AdminPageContent() {
   const filteredMembers = teamMembers
     .filter(member => member.isActive)
     .filter(member =>
-      member.name.toLowerCase().includes(memberSearch.toLowerCase()) ||
-      member.discordUid?.toLowerCase().includes(memberSearch.toLowerCase()) ||
-      member.roles.some(role => role.toLowerCase().includes(memberSearch.toLowerCase())) ||
-      member.classes.some(cls => cls.toLowerCase().includes(memberSearch.toLowerCase()))
+      matchesVietnameseSearch(member.name, memberSearch) ||
+      (member.discordUid && matchesVietnameseSearch(member.discordUid, memberSearch)) ||
+      member.roles.some(role => matchesVietnameseSearch(role, memberSearch)) ||
+      member.classes.some(cls => matchesVietnameseSearch(cls, memberSearch))
     )
     .sort((a, b) => a.name.localeCompare(b.name))
 
@@ -448,10 +449,10 @@ function AdminPageContent() {
   // Filter participants based on search
   const filteredParticipants = teamMembers.filter(member =>
     member.isActive && (
-      member.name.toLowerCase().includes(participantSearch.toLowerCase()) ||
-      member.discordUid?.toLowerCase().includes(participantSearch.toLowerCase()) ||
-      member.roles.some(role => role.toLowerCase().includes(participantSearch.toLowerCase())) ||
-      member.classes.some(dept => dept.toLowerCase().includes(participantSearch.toLowerCase()))
+      matchesVietnameseSearch(member.name, participantSearch) ||
+      (member.discordUid && matchesVietnameseSearch(member.discordUid, participantSearch)) ||
+      member.roles.some(role => matchesVietnameseSearch(role, participantSearch)) ||
+      member.classes.some(dept => matchesVietnameseSearch(dept, participantSearch))
     )
   )
 
@@ -1057,19 +1058,8 @@ function AdminPageContent() {
                   onUpdateGuest={handleUpdateGuestRole}
                   onRemoveGuest={handleRemoveGuest}
                   onUpdatePositions={handleUpdatePositions}
+                  onAddGuest={() => setShowGuestModal(true)}
                 />
-
-                {/* Add Guest Button */}
-                <div className="flex justify-center">
-                  <Button
-                    variant="outline"
-                    onClick={() => setShowGuestModal(true)}
-                    className="flex items-center gap-2"
-                  >
-                    <Plus className="h-4 w-4" />
-                    Thêm khách
-                  </Button>
-                </div>
 
                 {/* Summary Stats */}
                 <div className="grid grid-cols-6 gap-2 p-3 bg-gray-50 rounded">
