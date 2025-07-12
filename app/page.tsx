@@ -322,10 +322,11 @@ export default function HomePage() {
       const nameMatch = participant.name.toLowerCase().includes(searchLower)
       const discordMatch = participant.discordUid?.toLowerCase().includes(searchLower) || false
       const roleMatch = participant.meetingRole.toLowerCase().includes(searchLower)
+      const roleValueMatch = getRoleDisplayValue(participant.meetingRole as any).toLowerCase().includes(searchLower)
       const classCodeMatch = participant.meetingClass.toLowerCase().includes(searchLower)
       const classValueMatch = getClassValue(participant.meetingClass as any).toLowerCase().includes(searchLower)
       
-      return nameMatch || discordMatch || roleMatch || classCodeMatch || classValueMatch
+      return nameMatch || discordMatch || roleMatch || roleValueMatch || classCodeMatch || classValueMatch
     })
   }, [allParticipants, searchTerm])
 
@@ -572,7 +573,7 @@ export default function HomePage() {
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-green-200 h-5 w-5 z-10" />
               <Input
                 type="text"
-                placeholder="Tìm kiếm theo tên, Discord UID, vai trò, hoặc môn phái..."
+                placeholder="Tìm kiếm theo tên, vai trò, hoặc môn phái..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-12 bg-white/10 backdrop-blur-sm border-white/20 text-white focus:bg-white/20 focus:border-green-400 [&::placeholder]:text-white [&::placeholder]:opacity-100"
