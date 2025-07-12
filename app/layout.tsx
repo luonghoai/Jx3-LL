@@ -22,7 +22,7 @@ export default function RootLayout({
     <html lang="en">  
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-        <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;500;700&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;500;700&family=Great+Vibes:wght@400&family=Alex+Brush&display=swap" rel="stylesheet" />
       </head>
       <body className={inter.className}>{children}</body>
     </html>
