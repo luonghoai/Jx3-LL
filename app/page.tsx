@@ -477,7 +477,7 @@ export default function HomePage() {
         {/* Header Section */}
         <div className="flex-1 flex flex-col justify-center items-center px-4 py-12">
           {/* Headline */}
-          <div className="text-center mb-12">
+          <div className="text-center mb-6">
             <h1 className="neon-text text-6xl md:text-8xl mb-2">
               Lục Long
             </h1>
@@ -550,7 +550,7 @@ export default function HomePage() {
               </div> */}
               
               {/* Meeting details */}
-              <div className="mt-8 flex flex-wrap justify-center gap-4">
+              <div className="flex flex-wrap justify-center gap-4">
                 <span className="inline-flex items-center gap-2 px-6 py-3 bg-white/10 backdrop-blur-sm text-white rounded-full border border-white/20">
                   <Calendar className="h-5 w-5" />
                   {lastMeeting.date && new Date(lastMeeting.date).toLocaleDateString()}
@@ -568,7 +568,7 @@ export default function HomePage() {
           )}
 
           {/* Search Bar */}
-          <div className="w-full max-w-2xl mb-8">
+          <div className="w-full max-w-2xl mb-2">
             <div className="relative">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-green-200 h-5 w-5 z-10" />
               <Input
@@ -707,7 +707,7 @@ export default function HomePage() {
 
           {/* Summary Stats */}
           {!loading && lastMeeting && (
-            <div className="mt-12 grid grid-cols-1 md:grid-cols-6 gap-6 max-w-6xl mx-auto">
+            <div className="mt-8 grid grid-cols-1 md:grid-cols-6 gap-6 max-w-6xl mx-auto">
               <Card className="bg-white/10 backdrop-blur-sm border-white/20">
                 <CardContent className="p-6">
                   <div className="text-center">
