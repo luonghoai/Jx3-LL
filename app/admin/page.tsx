@@ -12,6 +12,7 @@ import GuestManager from '@/components/guest-manager'
 import MemberRoleModal from '@/components/member-role-modal'
 import MemberFormModal from '@/components/member-form-modal'
 import GuestFormModal from '@/components/guest-form-modal'
+import ParticipantGrid from '@/components/participant-grid'
 import { 
   MEETING_FILTER_OPTIONS,
   type MeetingFilterOption,
@@ -463,7 +464,7 @@ function AdminPageContent() {
 
   const handleAddParticipant = (member: TeamMember) => {
     const totalMembers = meetingForm.participants.length + meetingForm.temporaryGuests.length
-    if (totalMembers >= 25) {
+    if (totalMembers > 25) {
       alert('Tối đa 25 thành viên (bao gồm khách mời) cho mỗi lịch bí cảnh')
       return
     }
@@ -544,6 +545,14 @@ function AdminPageContent() {
     setMeetingForm(prev => ({
       ...prev,
       temporaryGuests: prev.temporaryGuests.filter(guest => guest.id !== guestId)
+    }))
+  }
+
+  const handleUpdatePositions = (updatedParticipants: MeetingParticipant[], updatedGuests: TemporaryGuest[]) => {
+    setMeetingForm(prev => ({
+      ...prev,
+      participants: updatedParticipants,
+      temporaryGuests: updatedGuests
     }))
   }
 
@@ -1033,79 +1042,34 @@ function AdminPageContent() {
                   </div>
                 </div>
 
-                {/* Selected Participants */}
-                <div>
-                  <label className="block text-sm font-medium mb-2">Thành viên đã chọn ({meetingForm.participants.length})</label>
-                  <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto">
-                    {meetingForm.participants.map((participant) => {
-                      const member = teamMembers.find(m => m._id === participant.memberId)
-                      const getRoleTextColor = (role: string) => {
-                        switch (role) {
-                          case 'Tank':
-                            return 'text-blue-600'
-                          case 'DPS':
-                            return 'text-red-600'
-                          case 'DPS1':
-                            return 'text-indigo-600'
-                          case 'Buff':
-                            return 'text-green-600'
-                          case 'Boss':
-                            return 'text-purple-600'
-                          default:
-                            return 'text-gray-600'
-                        }
-                      }
-                      
-                      return (
-                        <div key={participant.memberId} className="flex items-center gap-2 px-3 py-1 bg-blue-50 border border-blue-200 rounded-full text-xs">
-                          <Avatar className="h-5 w-5 flex-shrink-0">
-                            <AvatarImage src={member?.avatar || "/images/default.png"} />
-                            <AvatarFallback className="text-xs">
-                              {participant.name.split(' ').map(n => n[0]).join('')}
-                            </AvatarFallback>
-                          </Avatar>
-                          <span className="font-medium text-blue-900 truncate">{participant.name}</span>
-                                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getRoleTextColor(participant.meetingRole)}`}>
-                  {getRoleDisplayValue(participant.meetingRole as any)}
-                </span>
-                          <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full">{getClassValue(participant.meetingClass as any)}</span>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            onClick={() => handleUpdateParticipant(participant)}
-                            className="h-6 w-6 p-0"
-                          >
-                            <Edit className="h-3 w-3" />
-                          </Button>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            onClick={() => {
-                              setMeetingForm(prev => ({
-                                ...prev,
-                                participants: prev.participants.filter(p => p.memberId !== participant.memberId)
-                              }))
-                            }}
-                            className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
-                          >
-                            <X className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      )
-                    })}
-                  </div>
-                  {meetingForm.participants.length === 0 && (
-                    <p className="text-sm text-gray-500">Không có thành viên đã chọn</p>
-                  )}
-                </div>
-
-                {/* Guest Manager */}
-                <GuestManager
+                {/* Participant Grid */}
+                <ParticipantGrid
+                  participants={meetingForm.participants}
                   guests={meetingForm.temporaryGuests}
-                  onAddGuest={() => setShowGuestModal(true)}
-                  onRemoveGuest={handleRemoveGuest}
+                  teamMembers={teamMembers}
+                  onUpdateParticipant={handleUpdateParticipant}
+                  onRemoveParticipant={(memberId) => {
+                    setMeetingForm(prev => ({
+                      ...prev,
+                      participants: prev.participants.filter(p => p.memberId !== memberId)
+                    }))
+                  }}
                   onUpdateGuest={handleUpdateGuestRole}
+                  onRemoveGuest={handleRemoveGuest}
+                  onUpdatePositions={handleUpdatePositions}
                 />
+
+                {/* Add Guest Button */}
+                <div className="flex justify-center">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowGuestModal(true)}
+                    className="flex items-center gap-2"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Thêm khách
+                  </Button>
+                </div>
 
                 {/* Summary Stats */}
                 <div className="grid grid-cols-6 gap-2 p-3 bg-gray-50 rounded">
