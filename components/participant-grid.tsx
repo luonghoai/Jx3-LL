@@ -174,15 +174,15 @@ function SortableParticipantCard({ participant, onUpdate, onRemove }: SortablePa
         {/* Text information - Right side */}
         <div className="flex-1 min-w-0">
           {/* Name and Guest indicator */}
-          <div className="flex items-center gap-2 mb-2">
-            <h3 className="text-base font-semibold text-gray-800 truncate">
+          <div className="flex items-center gap-2 min-w-0">
+            <h4 className="text-base font-semibold text-gray-800 truncate flex-1 min-w-0">
               {participant.name}
-            </h3>
+            </h4> 
             {participant.type === 'guest' && (
-              <span className="px-2 py-1 border border-orange-500 text-orange-500 rounded-full text-xs bg-transparent flex-shrink-0">
+              <span className="px-0.5 py-0.5 border border-orange-500 text-orange-500 rounded-full text-[10px] bg-transparent flex-shrink-0 whitespace-nowrap">
                 Guest
               </span>
-            )}
+            )}    
           </div>
 
           {/* Role and Class */}
