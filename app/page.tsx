@@ -322,10 +322,10 @@ export default function HomePage() {
       {/* Main content */}
       <div className="relative z-10 min-h-screen flex flex-col">
         {/* Header Section */}
-        <div className="flex-1 flex flex-col justify-center items-center px-4 py-12">
+        <div className="flex-1 flex flex-col justify-center items-center px-4 pt-12">
           {/* Headline */}
           <div className="text-center mb-6">
-            <h1 className="neon-text text-6xl md:text-8xl mb-2">
+            <h1 className="neon-text text-8xl md:text-8xl mb-2">
               Lục Long
             </h1>
             {loading ? (

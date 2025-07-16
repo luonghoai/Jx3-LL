@@ -446,6 +446,31 @@ function AdminPageContent() {
     }
   }
 
+  const handleDeleteMeeting = async (meetingId: string) => {
+    if (!confirm('Bạn có chắc chắn muốn xóa vĩnh viễn lịch bí cảnh này không? Hành động này không thể hoàn tác.')) return
+    
+    try {
+      const response = await fetch(`/api/meeting-requests/${meetingId}`, {
+        method: 'DELETE',
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Không thể xóa lịch bí cảnh')
+      }
+
+      // Remove the meeting from the local state
+      setMeetingRequests(prev => 
+        prev.filter(meeting => meeting._id !== meetingId)
+      )
+      
+      alert('Đã xóa lịch bí cảnh thành công!')
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Không thể xóa lịch bí cảnh')
+      console.error('Error deleting meeting:', err)
+    }
+  }
+
   // Filter participants based on search
   const filteredParticipants = teamMembers.filter(member =>
     member.isActive && (
@@ -580,36 +605,6 @@ function AdminPageContent() {
     setEditingGuestId(null)
     setEditingGuest(null)
     setShowGuestRoleModal(false)
-  }
-
-  const handleFillAllMembers = () => {
-    const totalMembers = teamMembers.filter(m => m.isActive).length + meetingForm.temporaryGuests.length
-    if (totalMembers > 25) {
-      alert('Tối đa 25 thành viên (bao gồm khách mời) cho mỗi lịch bí cảnh')
-      return
-    }
-
-    const allActiveMembers = teamMembers.filter(m => m.isActive)
-    const newParticipants: MeetingParticipant[] = allActiveMembers.map((member, index) => {
-      // Get the first class from member's classes, or use 'BD' as default
-      const memberClass = (member.classes[0] || 'BD') as any
-      // Get the default DPS role for that class
-      const defaultRole = getDefaultDPSRoleForClass(memberClass)
-      
-      return {
-        memberId: member._id,
-        name: member.name,
-        discordUid: member.discordUid,
-        meetingRole: defaultRole,
-        meetingClass: memberClass,
-        position: index
-      }
-    })
-
-    setMeetingForm(prev => ({
-      ...prev,
-      participants: newParticipants
-    }))
   }
 
   const handleCopyFromMeeting = (meeting: MeetingRequest) => {
@@ -999,14 +994,6 @@ function AdminPageContent() {
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <label className="block text-sm font-medium">Chọn thành viên</label>
-                    <Button 
-                      size="sm" 
-                      variant="outline" 
-                      onClick={handleFillAllMembers}
-                      className="text-xs"
-                    >
-                      Thêm tất cả thành viên
-                    </Button>
                   </div>
                   <Input
                     placeholder="Tìm kiếm thành viên..."
@@ -1182,6 +1169,14 @@ function AdminPageContent() {
                               onClick={() => handleCopyFromMeeting(meeting)}
                             >
                               Sao chép thành viên
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => handleDeleteMeeting(meeting._id)}
+                            >
+                              <Trash2 className="h-3 w-3 mr-1" />
+                              Xóa
                             </Button>
                           </div>
                         </div>

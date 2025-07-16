@@ -6,9 +6,11 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Hash } from 'lucide-react'
-import { ROLE_OPTIONS, CLASS_OPTIONS, getAvailableRolesForClass, getAvailableClassesForRole, getClassValue, getRoleDisplayValue } from '@/lib/constants'
+import { ROLE_OPTIONS, CLASS_OPTIONS, getAvailableRolesForClass, getAvailableClassesForRole, getClassValue, getRoleDisplayValue, getClassCode } from '@/lib/constants'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { fetchDiscordUser, getDiscordAvatarUrl, getDiscordDisplayName, type DiscordUser } from '@/lib/discord'
+import { Search } from 'lucide-react'
+import { matchesVietnameseSearch } from '@/lib/utils'
 
 interface Guest {
   id: string
@@ -52,6 +54,9 @@ export default function GuestFormModal({
   const [discordUser, setDiscordUser] = useState<DiscordUser | null>(null)
   const [discordError, setDiscordError] = useState<string | null>(null)
   const [avatar, setAvatar] = useState<string>('')
+  const [classFilter, setClassFilter] = useState('')
+  const [showClassList, setShowClassList] = useState(false)
+  const searchInputRef = React.useRef<HTMLInputElement>(null)
 
   // Load guest data when editing
   useEffect(() => {
@@ -65,6 +70,8 @@ export default function GuestFormModal({
       setAvatar(editingGuest.avatar || '')
       setDiscordUser(null)
       setDiscordError(null)
+      setClassFilter('')
+      setShowClassList(false)
     } else {
       // Reset form when adding new guest
       setName('')
@@ -76,8 +83,39 @@ export default function GuestFormModal({
       setAvatar('')
       setDiscordUser(null)
       setDiscordError(null)
+      setClassFilter('')
+      setShowClassList(false)
     }
   }, [editingGuest])
+
+  // Keep input focused when filtering
+  useEffect(() => {
+    if (searchInputRef.current && classFilter) {
+      searchInputRef.current.focus()
+    }
+  }, [classFilter])
+
+  // Handle click outside to close class list
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      // Check if click is within the search input or the dropdown
+      const target = event.target as Node
+      const isWithinInput = searchInputRef.current?.contains(target)
+      const isWithinDropdown = (event.target as Element)?.closest('.class-dropdown')
+      
+      if (!isWithinInput && !isWithinDropdown) {
+        setShowClassList(false)
+      }
+    }
+
+    if (showClassList) {
+      document.addEventListener('click', handleClickOutside)
+    }
+
+    return () => {
+      document.removeEventListener('click', handleClickOutside)
+    }
+  }, [showClassList])
 
   // Update available options based on selection
   useEffect(() => {
@@ -138,6 +176,8 @@ export default function GuestFormModal({
     setAvatar('')
     setDiscordUser(null)
     setDiscordError(null)
+    setClassFilter('')
+    setShowClassList(false)
     onClose()
   }
 
@@ -280,18 +320,67 @@ export default function GuestFormModal({
           {/* Class Field */}
           <div>
             <label className="block text-sm font-medium mb-2">Môn phái *</label>
-            <Select value={meetingClass} onValueChange={setMeetingClass}>
-              <SelectTrigger className="flex-1">
-                <SelectValue placeholder="Chọn môn phái" />
-              </SelectTrigger>
-              <SelectContent>
-                {availableClasses.map((classCode) => (
-                  <SelectItem key={classCode} value={classCode}>
-                    {getClassValue(classCode as any)} ({classCode})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            
+            <div className="relative">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  placeholder="Tìm kiếm môn phái..."
+                  value={meetingClass ? getClassValue(meetingClass as any) : classFilter}
+                  onChange={(e) => {
+                    const value = e.target.value
+                    setClassFilter(value)
+                    // If user is typing, clear the selected class
+                    if (meetingClass) {
+                      setMeetingClass('')
+                    }
+                  }}
+                  onFocus={() => setShowClassList(true)}
+                  className={`w-full pl-10 pr-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    meetingClass 
+                      ? 'border-green-500 bg-green-50 text-green-700' 
+                      : 'border-gray-300'
+                  }`}
+                />
+              </div>
+              
+              {/* Filtered class list */}
+              {showClassList && (
+                <div className="class-dropdown absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto z-10">
+                  {(() => {
+                    const filteredClasses = availableClasses.filter(classCode => {
+                      if (!classFilter) return true
+                      const className = getClassValue(classCode as any)
+                      return matchesVietnameseSearch(className, classFilter)
+                    })
+                    
+                    if (filteredClasses.length === 0 && classFilter) {
+                      return (
+                        <div className="px-3 py-2 text-sm text-gray-500 text-center">
+                          Không tìm thấy môn phái "{classFilter}"
+                        </div>
+                      )
+                    }
+                    
+                    return filteredClasses.map((classCode) => (
+                      <div
+                        key={classCode}
+                        className="px-3 py-2 hover:bg-gray-100 cursor-pointer text-sm"
+                        onClick={() => {
+                          setMeetingClass(classCode)
+                          setClassFilter('')
+                          setShowClassList(false)
+                        }}
+                      >
+                        {getClassValue(classCode as any)} ({classCode})
+                      </div>
+                    ))
+                  })()}
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="flex gap-2 pt-4">
