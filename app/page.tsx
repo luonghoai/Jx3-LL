@@ -425,25 +425,6 @@ export default function HomePage() {
                   {lastMeeting.status}
                 </span>
               </div>
-              
-              {/* Hoster Display */}
-              {lastMeeting.hoster && (
-                <div className="mt-4 p-4 bg-gradient-to-r from-yellow-400/20 to-orange-400/20 rounded-lg border border-yellow-400/30">
-                  <div className="flex items-center justify-center gap-3">
-                    <div className="w-8 h-8 bg-yellow-400 rounded-full flex items-center justify-center animate-pulse">
-                      <span className="text-yellow-900 font-bold text-sm">👑</span>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-yellow-300 font-semibold">Hoster</p>
-                      <p className="text-white font-bold">{lastMeeting.hoster.name}</p>
-                      <p className="text-green-200 text-sm">
-                        {getRoleDisplayValue(lastMeeting.hoster.meetingRole as any)} - {getClassValue(lastMeeting.hoster.meetingClass as any)}
-                      </p>
-                      <p className="text-yellow-200 text-xs">Score: {lastMeeting.hoster.score}</p>
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
           )}
 
