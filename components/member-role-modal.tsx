@@ -11,35 +11,12 @@ import {
   getAvailableRolesForClass, 
   getAvailableClassesForRole, 
   getClassValue, 
-  getClassCode,
-  getDefaultDPSRoleForClass,
-  getDefaultClassForRole,
   isValidRoleForClass,
-  isValidClassForRole,
   getRoleDisplayValue,
   type Role,
   type ClassCode
 } from '@/lib/constants'
 import { matchesVietnameseSearch } from '@/lib/utils'
-
-interface TeamMember {
-  _id: string
-  name: string
-  email: string
-  roles: string[]
-  departments: string[]
-  avatar?: string
-  isActive: boolean
-  joinDate: Date
-}
-
-interface MeetingParticipant {
-  memberId: string
-  name: string
-  email: string
-  meetingRole: string
-  meetingDepartment: string
-}
 
 interface MemberRoleModalProps {
   isOpen: boolean

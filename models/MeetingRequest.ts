@@ -62,6 +62,46 @@ const temporaryGuestSchema = new mongoose.Schema({
   }
 })
 
+const joinRequestSchema = new mongoose.Schema({
+  discordUid: {
+    type: String,
+    required: true
+  },
+  name: {
+    type: String,
+    required: true
+  },
+  requestedRole: {
+    type: String,
+    required: true
+  },
+  requestedClass: {
+    type: String,
+    required: true
+  },
+  status: {
+    type: String,
+    enum: ['pending', 'approved', 'rejected'],
+    default: 'pending'
+  },
+  requestedAt: {
+    type: Date,
+    default: Date.now
+  },
+  processedAt: {
+    type: Date,
+    default: null
+  },
+  processedBy: {
+    type: String,
+    default: null
+  },
+  reason: {
+    type: String,
+    default: null
+  }
+})
+
 const meetingRequestSchema = new mongoose.Schema({
   title: {
     type: String,
@@ -89,6 +129,37 @@ const meetingRequestSchema = new mongoose.Schema({
   },
   participants: [meetingParticipantSchema],
   temporaryGuests: [temporaryGuestSchema],
+  joinRequests: [joinRequestSchema],
+  hoster: {
+    memberId: {
+      type: String,
+      required: false
+    },
+    name: {
+      type: String,
+      required: false
+    },
+    discordUid: {
+      type: String,
+      required: false
+    },
+    meetingRole: {
+      type: String,
+      required: false
+    },
+    meetingClass: {
+      type: String,
+      required: false
+    },
+    score: {
+      type: Number,
+      required: false
+    },
+    selectedAt: {
+      type: Date,
+      required: false
+    }
+  },
   isActive: {
     type: Boolean,
     default: true
