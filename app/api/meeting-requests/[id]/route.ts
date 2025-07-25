@@ -3,6 +3,10 @@ import connectDB from '@/lib/mongodb'
 import MeetingRequest from '@/models/MeetingRequest'
 import UserScore from '@/models/UserScore'
 
+// Disable Next.js caching for this route
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 // GET - Fetch a specific meeting request
 export async function GET(
   request: NextRequest,
