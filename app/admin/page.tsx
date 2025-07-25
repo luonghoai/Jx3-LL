@@ -57,6 +57,18 @@ interface TemporaryGuest {
   position?: number
 }
 
+interface JoinRequest {
+  discordUid: string
+  name: string
+  requestedRole: string
+  requestedClass: string
+  status: 'pending' | 'approved' | 'rejected'
+  requestedAt: string
+  processedAt?: string
+  processedBy?: string
+  reason?: string
+}
+
 interface MeetingRequest {
   _id: string
   title: string
@@ -66,6 +78,7 @@ interface MeetingRequest {
   status: string
   participants: MeetingParticipant[]
   temporaryGuests: TemporaryGuest[]
+  joinRequests?: JoinRequest[]
   isActive: boolean
   createdAt: string
   updatedAt: string
@@ -90,6 +103,7 @@ function AdminPageContent() {
   const [editingGuestId, setEditingGuestId] = useState<string | null>(null)
   const [showGuestRoleModal, setShowGuestRoleModal] = useState(false)
   const [editingMeetingId, setEditingMeetingId] = useState<string | null>(null)
+  const [processingRequest, setProcessingRequest] = useState<string | null>(null)
   
   // Meeting filter state
   const [meetingFilter, setMeetingFilter] = useState<MeetingFilterOption>(MEETING_FILTER_OPTIONS.ALL)
@@ -737,6 +751,61 @@ function AdminPageContent() {
     setEditingMeetingId(null)
   }
 
+  // Get role color for styling
+  const getRoleColor = (role: string) => {
+    switch (role) {
+      case 'Tank':
+        return 'text-blue-600'
+      case 'DPS':
+        return 'text-red-600'
+      case 'DPS1':
+        return 'text-indigo-600'
+      case 'Buff':
+        return 'text-green-600'
+      case 'Boss':
+        return 'text-purple-600'
+      default:
+        return 'text-gray-600'
+    }
+  }
+
+
+
+  // Handle join request approval/rejection
+  const handleJoinRequest = async (meetingId: string, discordUid: string, action: 'approve' | 'reject', reason?: string) => {
+    setProcessingRequest(discordUid)
+    try {
+      const response = await fetch(`/api/meeting-requests/${meetingId}/join-requests`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          discordUid,
+          action,
+          processedBy: 'Admin',
+          reason
+        })
+      })
+
+      if (response.ok) {
+        // Refresh meeting data to get updated join requests and participants
+        await fetchMeetingRequests()
+        alert(`Đã ${action === 'approve' ? 'chấp nhận' : 'từ chối'} yêu cầu tham gia thành công!`)
+      } else {
+        const errorData = await response.json()
+        alert(`Lỗi: ${errorData.error || 'Không thể xử lý yêu cầu tham gia'}`)
+      }
+    } catch (error) {
+      console.error('Error processing join request:', error)
+      alert('Có lỗi xảy ra khi xử lý yêu cầu tham gia')
+    } finally {
+      setProcessingRequest(null)
+    }
+  }
+
+
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8">
@@ -945,6 +1014,8 @@ function AdminPageContent() {
         {/* Meeting Requests Tab */}
         {activeTab === 'meetings' && (
           <div className="space-y-6">
+
+
             {/* Meeting Request Form */}
             <Card data-meeting-form>
               <CardHeader>
@@ -1257,6 +1328,68 @@ function AdminPageContent() {
                             })}
                           </div>
                         </div>
+
+                        {/* Join Requests */}
+                        {meeting.joinRequests && meeting.joinRequests.length > 0 && (
+                          <div className="space-y-2 mt-4 pt-4 border-t">
+                            <h4 className="font-medium text-sm flex items-center gap-2">
+                              <MessageSquare className="h-4 w-4" />
+                              Yêu cầu tham gia ({meeting.joinRequests.filter(r => r.status === 'pending').length} đang chờ)
+                            </h4>
+                            <div className="flex flex-wrap gap-1">
+                              {meeting.joinRequests
+                                .filter(request => request.status === 'pending')
+                                .map((request) => {
+                                  const getRoleTextColor = (role: string) => {
+                                    switch (role) {
+                                      case 'Tank':
+                                        return 'text-blue-600'
+                                      case 'DPS':
+                                        return 'text-red-600'
+                                      case 'DPS1':
+                                        return 'text-indigo-600'
+                                      case 'Buff':
+                                        return 'text-green-600'
+                                      case 'Boss':
+                                        return 'text-purple-600'
+                                      default:
+                                        return 'text-gray-600'
+                                    }
+                                  }
+                                  
+                                  return (
+                                    <div key={request.discordUid} className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs flex items-center gap-2">
+                                      <span>
+                                        {request.name} - <span className={`font-semibold ${getRoleTextColor(request.requestedRole)}`}>{getRoleDisplayValue(request.requestedRole as any)}</span> - {getClassValue(request.requestedClass as any)}
+                                      </span>
+                                      <div className="flex gap-1">
+                                        <Button
+                                          size="sm"
+                                          onClick={() => handleJoinRequest(meeting._id, request.discordUid, 'approve')}
+                                          disabled={processingRequest === request.discordUid}
+                                          className="bg-green-600 hover:bg-green-700 text-white text-xs px-2 py-1 h-auto"
+                                        >
+                                          {processingRequest === request.discordUid ? '...' : '✓'}
+                                        </Button>
+                                        <Button
+                                          size="sm"
+                                          variant="outline"
+                                          onClick={() => {
+                                            const reason = prompt('Lý do từ chối (tùy chọn):')
+                                            handleJoinRequest(meeting._id, request.discordUid, 'reject', reason || undefined)
+                                          }}
+                                          disabled={processingRequest === request.discordUid}
+                                          className="text-red-600 hover:text-red-700 text-xs px-2 py-1 h-auto"
+                                        >
+                                          {processingRequest === request.discordUid ? '...' : '✗'}
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  )
+                                })}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     ))}
 

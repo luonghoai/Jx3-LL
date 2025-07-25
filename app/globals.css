@@ -317,3 +317,60 @@
   background-color: #f3f4f6;
   border-color: #9ca3af;
 } 
+
+/* Custom animations for hoster */
+@keyframes hoster-pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.02);
+  }
+}
+
+@keyframes hoster-glow {
+  0%, 100% {
+    box-shadow: 0 0 5px rgba(251, 191, 36, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(251, 191, 36, 0.8), 0 0 30px rgba(251, 191, 36, 0.6);
+  }
+}
+
+.animate-hoster-pulse {
+  animation: hoster-pulse 2s ease-in-out infinite;
+}
+
+.animate-hoster-glow {
+  animation: hoster-glow 3s ease-in-out infinite;
+}
+
+/* Hoster card specific styles */
+.hoster-card {
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.1) 0%, rgba(249, 115, 22, 0.1) 100%);
+  border: 2px solid rgba(251, 191, 36, 0.5);
+  position: relative;
+  overflow: hidden;
+}
+
+.hoster-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(251, 191, 36, 0.2), transparent);
+  animation: hoster-shine 3s infinite;
+}
+
+@keyframes hoster-shine {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
+} 

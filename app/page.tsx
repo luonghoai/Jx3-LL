@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { Button } from '../components/ui/button'
 import { Card, CardContent } from '../components/ui/card'
 import { Input } from '../components/ui/input'
-import { Users, Settings, Search, Calendar, Clock, MapPin } from 'lucide-react'
+import { Users, Settings, Search, Calendar, Clock, MapPin, Trophy } from 'lucide-react'
 import { getClassRoleIcon, getClassIcon, getClassValue, getRoleDisplayValue } from '@/lib/constants'
 import { matchesVietnameseSearch } from '@/lib/utils'
 
@@ -41,6 +41,16 @@ interface TemporaryGuest {
   position?: number
 }
 
+interface Hoster {
+  memberId: string
+  name: string
+  discordUid?: string
+  meetingRole: string
+  meetingClass: string
+  score: number
+  selectedAt: string
+}
+
 interface MeetingRequest {
   _id: string
   title: string
@@ -50,6 +60,7 @@ interface MeetingRequest {
   status: string
   participants: MeetingParticipant[]
   temporaryGuests: TemporaryGuest[]
+  hoster?: Hoster
   isActive: boolean
   createdAt: string
   updatedAt: string
@@ -74,11 +85,14 @@ interface ParticipantCardProps {
     type: 'member' | 'guest'
   }
   getRoleColor: (role: string) => string
+  isHoster: boolean
 }
 
-function ParticipantCard({ participant, getRoleColor }: ParticipantCardProps) {
+function ParticipantCard({ participant, getRoleColor, isHoster }: ParticipantCardProps) {
   return (
-    <div className="flex items-center p-3 w-full h-24 bg-white rounded-md shadow-lg hover:shadow-xl transition-shadow">
+    <div className={`flex items-center p-3 w-full h-24 rounded-md shadow-lg hover:shadow-xl transition-shadow ${
+      isHoster && participant.type === 'member' ? 'hoster-card animate-hoster-pulse' : 'bg-white'
+    }`}>
       <section className="relative flex justify-center items-center w-12 h-12 rounded-full shadow-md bg-gradient-to-r from-[#F9C97C] to-[#A2E9C1] hover:from-[#C9A9E9] hover:to-[#7EE7FC] hover:scale-110 duration-300 flex-shrink-0">
         <img 
           src={participant.avatar || "/images/default.png"}
@@ -411,6 +425,25 @@ export default function HomePage() {
                   {lastMeeting.status}
                 </span>
               </div>
+              
+              {/* Hoster Display */}
+              {lastMeeting.hoster && (
+                <div className="mt-4 p-4 bg-gradient-to-r from-yellow-400/20 to-orange-400/20 rounded-lg border border-yellow-400/30">
+                  <div className="flex items-center justify-center gap-3">
+                    <div className="w-8 h-8 bg-yellow-400 rounded-full flex items-center justify-center animate-pulse">
+                      <span className="text-yellow-900 font-bold text-sm">👑</span>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-yellow-300 font-semibold">Hoster</p>
+                      <p className="text-white font-bold">{lastMeeting.hoster.name}</p>
+                      <p className="text-green-200 text-sm">
+                        {getRoleDisplayValue(lastMeeting.hoster.meetingRole as any)} - {getClassValue(lastMeeting.hoster.meetingClass as any)}
+                      </p>
+                      <p className="text-yellow-200 text-xs">Score: {lastMeeting.hoster.score}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -434,8 +467,14 @@ export default function HomePage() {
 
         {/* Body Section */}
         <div className="px-4 pb-8">
-          {/* Floating Admin Access Button */}
-          <div className="fixed bottom-6 right-6 z-50">
+          {/* Floating Action Buttons */}
+          <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-2">
+            <Link href="/leaderboard">
+              <Button variant="outline" className="shadow-lg bg-white/10 backdrop-blur-sm border-white/20 text-white hover:bg-white/20">
+                <Trophy className="h-4 w-4 mr-2" />
+                Bảng Xếp Hạng
+              </Button>
+            </Link>
             <Link href="/login">
               <Button variant="outline" className="shadow-lg bg-white/10 backdrop-blur-sm border-white/20 text-white hover:bg-white/20">
                 <Settings className="h-4 w-4 mr-2" />
@@ -466,6 +505,7 @@ export default function HomePage() {
                     key={participant.id}
                     participant={participant}
                     getRoleColor={getRoleColor}
+                    isHoster={lastMeeting?.hoster?.discordUid === participant.discordUid}
                   />
                 ))}
               </div>

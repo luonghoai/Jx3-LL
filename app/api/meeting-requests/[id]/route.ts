@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import connectDB from '@/lib/mongodb'
 import MeetingRequest from '@/models/MeetingRequest'
+import UserScore from '@/models/UserScore'
 
 // GET - Fetch a specific meeting request
 export async function GET(
@@ -165,6 +166,49 @@ export async function PATCH(
         { error: 'Meeting request not found' },
         { status: 404 }
       )
+    }
+
+    // Award points to team members when meeting is confirmed
+    if (body.status === 'confirmed') {
+      try {
+        // Award points only to team members (participants), not guests
+        const participants = meetingRequest.participants || []
+        for (const participant of participants) {
+          if (participant.discordUid && participant.memberId) {
+            try {
+              // Check if user score exists, create if not
+              let userScore = await UserScore.findOne({ memberId: participant.memberId })
+              
+              if (!userScore) {
+                // Create new user score with base score
+                userScore = new UserScore({
+                  memberId: participant.memberId,
+                  discordUid: participant.discordUid,
+                  name: participant.name,
+                  score: 100, // Base score
+                  totalMeetingsJoined: 0
+                })
+              }
+              
+              // Award 1 point for this meeting
+              userScore.score += 1
+              userScore.totalMeetingsJoined += 1
+              userScore.lastUpdated = new Date()
+              await userScore.save()
+              
+              console.log(`Awarded 1 point to ${participant.name} (${participant.discordUid}) - New score: ${userScore.score}`)
+            } catch (scoreError) {
+              console.error(`Failed to award points to ${participant.name}:`, scoreError)
+              // Continue with other participants even if one fails
+            }
+          }
+        }
+
+        console.log(`Awarded points to ${participants.length} team members for confirmed meeting: ${meetingRequest.title}`)
+      } catch (error) {
+        console.error('Error awarding points for confirmed meeting:', error)
+        // Don't fail the meeting confirmation if point awarding fails
+      }
     }
     
     return NextResponse.json(meetingRequest)
