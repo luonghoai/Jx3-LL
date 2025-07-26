@@ -35,14 +35,28 @@ export async function POST(request: NextRequest) {
     // Find user score by discordUid
     let userScore = await UserScore.findOne({ discordUid })
 
+    // If not found, try to create a new one from TeamMember
     if (!userScore) {
-      return NextResponse.json(
-        { 
-          success: false,
-          error: 'User score not found for this Discord UID' 
-        },
-        { status: 404 }
-      )
+      const teamMember = await TeamMember.findOne({ discordUid })
+      if (!teamMember) {
+        return NextResponse.json(
+          { 
+            success: false,
+            error: 'No TeamMember found for this Discord UID, cannot create user score.' 
+          },
+          { status: 404 }
+        )
+      }
+      userScore = new UserScore({
+        memberId: teamMember._id,
+        discordUid: teamMember.discordUid || '',
+        name: teamMember.name,
+        score: 100, // Default score
+        totalMeetingsJoined: 0,
+        lastUpdated: new Date(),
+        modifications: []
+      })
+      await userScore.save()
     }
 
     // Calculate new score
