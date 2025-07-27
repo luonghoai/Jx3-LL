@@ -60,7 +60,6 @@ const userScoreSchema = new mongoose.Schema({
 }, { timestamps: true })
 
 // Index for efficient queries
-userScoreSchema.index({ memberId: 1 })
 userScoreSchema.index({ score: -1 }) // For leaderboard queries
 
 
