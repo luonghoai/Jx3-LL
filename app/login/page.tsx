@@ -7,6 +7,7 @@ import { Button } from '../../components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card'
 import { Input } from '../../components/ui/input'
 import { ArrowLeft, Lock, User } from 'lucide-react'
+import { ButtonSpinner } from '@/components/ui/spinner'
 
 export default function LoginPage() {
   const [credentials, setCredentials] = useState({ username: '', password: '' })
@@ -109,6 +110,7 @@ export default function LoginPage() {
                 className="w-full" 
                 disabled={isLoading}
               >
+                {isLoading && <ButtonSpinner />}
                 {isLoading ? 'Signing in...' : 'Sign In'}
               </Button>
             </form>

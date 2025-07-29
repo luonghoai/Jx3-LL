@@ -151,10 +151,6 @@ const meetingRequestSchema = new mongoose.Schema({
       type: String,
       required: false
     },
-    score: {
-      type: Number,
-      required: false
-    },
     selectedAt: {
       type: Date,
       required: false

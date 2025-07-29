@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { fetchDiscordUser, getDiscordAvatarUrl, getDiscordDisplayName, type DiscordUser } from '@/lib/discord'
 import { Search } from 'lucide-react'
 import { matchesVietnameseSearch } from '@/lib/utils'
+import { ButtonSpinner } from '@/components/ui/spinner'
 
 interface Guest {
   id: string
@@ -384,7 +385,8 @@ export default function GuestFormModal({
           </div>
 
           <div className="flex gap-2 pt-4">
-            <Button onClick={handleSave} className="flex-1">
+            <Button onClick={handleSave} className="flex-1" disabled={isLoading}>
+              {isLoading && <ButtonSpinner />}
               {editingGuest ? 'Cập nhật' : 'Thêm'} khách mời
             </Button>
             <Button onClick={handleClose} variant="outline" className="flex-1">

@@ -9,6 +9,7 @@ import { Hash } from 'lucide-react'
 import { ROLE_OPTIONS, CLASS_OPTIONS, getAvailableRolesForClass, getAvailableClassesForRole, getClassValue, getClassCode, getRoleDisplayValue } from '@/lib/constants'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { fetchDiscordUser, getDiscordAvatarUrl, getDiscordDisplayName, type DiscordUser } from '@/lib/discord'
+import { ButtonSpinner } from '@/components/ui/spinner'
 
 interface TeamMember {
   _id: string
@@ -352,7 +353,8 @@ export default function MemberFormModal({
           </div>
 
           <div className="flex gap-2 pt-4">
-            <Button onClick={handleSave} className="flex-1">
+            <Button onClick={handleSave} className="flex-1" disabled={isLoading}>
+              {isLoading && <ButtonSpinner />}
               {editingMember ? 'Cập nhật' : 'Thêm'} thành viên
             </Button>
             <Button onClick={handleClose} variant="outline" className="flex-1">

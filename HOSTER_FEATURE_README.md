@@ -2,18 +2,18 @@
 
 ## Overview
 
-The Hoster feature allows each **confirmed** meeting request to have one designated hoster (leader) who is selected randomly with score-weighted probability. Higher-scoring members have a better chance of being selected as hoster. **Hoster selection is only available for meetings with confirmed status.**
+The Hoster feature allows each **confirmed** meeting request to have one designated hoster (leader) who is selected randomly from all participants. **Hoster selection is only available for meetings with confirmed status.**
 
 ## Features
 
-### 1. **Score-Weighted Random Selection**
-- Members with higher scores have higher chances of being selected
-- Uses weighted random algorithm based on user scores
+### 1. **Simple Random Selection**
+- All team members (participants) have equal chances of being selected
+- Uses simple random algorithm for fair selection
 - Only team members (participants) are eligible, not temporary guests
 
 ### 2. **Hoster Display**
 - Special visual styling for hoster cards with blinking/pulsing effects
-- Crown icon and score display
+- Crown icon display
 - Dedicated hoster section in meeting details
 
 ### 3. **API Endpoints**
@@ -34,7 +34,6 @@ POST /api/meeting-requests/{meetingId}/select-hoster
     "discordUid": "123456789",
     "meetingRole": "Tank",
     "meetingClass": "TV",
-    "score": 105,
     "selectedAt": "2024-01-15T10:30:00.000Z"
   },
   "alreadySelected": false
@@ -56,7 +55,6 @@ GET /api/meeting-requests/{meetingId}/select-hoster
     "discordUid": "123456789",
     "meetingRole": "Tank",
     "meetingClass": "TV",
-    "score": 105,
     "selectedAt": "2024-01-15T10:30:00.000Z"
   }
 }
@@ -95,7 +93,7 @@ async def main():
     
     if result["success"]:
         hoster = result["data"]["hoster"]
-        print(f"Hoster selected: {hoster['name']} (Score: {hoster['score']})")
+        print(f"Hoster selected: {hoster['name']}")
     
     # Get current hoster
     hoster_result = await api.get_hoster("meeting_id_here")
@@ -123,33 +121,16 @@ hoster: {
   discordUid: String,
   meetingRole: String,
   meetingClass: String,
-  score: Number,
   selectedAt: Date
 }
 ```
 
-### 2. **Score-Weighted Selection Algorithm**
+### 2. **Simple Random Selection Algorithm**
 
 ```typescript
-function selectWeightedRandomHoster(participants: any[]): any {
-  // Calculate total weight (sum of all scores)
-  const totalWeight = participants.reduce((sum, participant) => sum + participant.score, 0)
-  
-  // Generate random number between 0 and total weight
-  const random = Math.random() * totalWeight
-  
-  // Find the participant based on weighted random selection
-  let currentWeight = 0
-  
-  for (const participant of participants) {
-    currentWeight += participant.score
-    
-    if (random <= currentWeight) {
-      return participant
-    }
-  }
-  
-  return participants[participants.length - 1]
+function selectRandomHoster(participants: any[]): any {
+  const randomIndex = Math.floor(Math.random() * participants.length)
+  return participants[randomIndex]
 }
 ```
 
@@ -181,19 +162,17 @@ Custom CSS animations for hoster visual effects:
 - **Only confirmed meetings** are eligible for hoster selection
 - Only team members (participants) are eligible for hoster selection
 - Temporary guests are not eligible
-- Members with higher scores have proportionally higher chances
+- All eligible members have equal chances of being selected
 - Once a hoster is selected, it cannot be changed (returns existing hoster)
 
-### 2. **Score Impact**
-- Base score: 100 points
-- Each confirmed meeting: +1 point
-- Higher scores = higher selection probability
-- Example: Member with 105 points has 5% higher chance than member with 100 points
+### 2. **Fair Selection**
+- Simple random selection ensures equal opportunity
+- No bias based on previous participation or performance
+- Transparent and predictable selection process
 
 ### 3. **Visual Indicators**
 - Hoster cards have special styling with animations
 - Crown icon (👑) displayed next to hoster name
-- Score prominently displayed
 - Blinking/pulsing effects to draw attention
 
 ## Usage Examples
@@ -204,8 +183,7 @@ User: !selecthoster
 Bot: 🎉 Hoster Selected!
      👑 New Hoster: John Doe
      Role: Tank - TV
-     Score: 105
-     Selection Method: Score-weighted random selection
+     Selection Method: Random selection
 ```
 
 ### 2. **Check Current Hoster**
@@ -214,7 +192,6 @@ User: !hoster
 Bot: 👑 Current Hoster
      Hoster: John Doe
      Role: Tank - TV
-     Score: 105
      Selected At: 2024-01-15T10:30:00.000Z
 ```
 
@@ -227,7 +204,7 @@ Bot: 📅 Latest Confirmed Meeting
      Time: 20:00
      Status: confirmed
      Participants: 8
-     👑 Hoster: John Doe (Tank - TV) - Score: 105
+     👑 Hoster: John Doe (Tank - TV)
 ```
 
 ### 4. **Error - Meeting Not Confirmed**
