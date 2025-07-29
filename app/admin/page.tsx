@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { ArrowLeft, Plus, Edit, Trash2, X, Users, MessageSquare, Swords, Calendar, Search } from 'lucide-react'
+import { Spinner, CardSpinner, ButtonSpinner } from '@/components/ui/spinner'
 import AuthGuard from '@/components/auth-guard'
 import GuestManager from '@/components/guest-manager'
 import MemberRoleModal from '@/components/member-role-modal'
@@ -91,7 +92,7 @@ function AdminPageContent() {
   const [meetingRequests, setMeetingRequests] = useState<MeetingRequest[]>([])
   const [meetingLoading, setMeetingLoading] = useState(true)
   const [meetingError, setMeetingError] = useState<string | null>(null)
-  const [activeTab, setActiveTab] = useState<'members' | 'meetings'>('members')
+  const [activeTab, setActiveTab] = useState<'members' | 'meetings'>('meetings')
   const [participantSearch, setParticipantSearch] = useState('')
   const [selectedMember, setSelectedMember] = useState<TeamMember | null>(null)
   const [editingParticipantId, setEditingParticipantId] = useState<string | null>(null)
@@ -104,6 +105,17 @@ function AdminPageContent() {
   const [showGuestRoleModal, setShowGuestRoleModal] = useState(false)
   const [editingMeetingId, setEditingMeetingId] = useState<string | null>(null)
   const [processingRequest, setProcessingRequest] = useState<string | null>(null)
+  
+  // Loading states for specific actions
+  const [creatingMember, setCreatingMember] = useState(false)
+  const [updatingMember, setUpdatingMember] = useState(false)
+  const [deletingMember, setDeletingMember] = useState<string | null>(null)
+  const [creatingMeeting, setCreatingMeeting] = useState(false)
+  const [confirmingMeeting, setConfirmingMeeting] = useState<string | null>(null)
+  const [cancelingMeeting, setCancelingMeeting] = useState<string | null>(null)
+  const [deletingMeeting, setDeletingMeeting] = useState<string | null>(null)
+  const [updatingMeeting, setUpdatingMeeting] = useState(false)
+  const [processingJoinRequest, setProcessingJoinRequest] = useState<string | null>(null)
   
   // Meeting filter state
   const [meetingFilter, setMeetingFilter] = useState<MeetingFilterOption>(MEETING_FILTER_OPTIONS.ALL)
@@ -185,6 +197,7 @@ function AdminPageContent() {
   // Update CRUD functions to use API
   const handleAddMember = async (memberData: { name: string; discordUid?: string; roles: string[]; classes: string[]; avatar?: string }) => {
     try {
+      setCreatingMember(true)
       const response = await fetch('/api/team-members', {
         method: 'POST',
         headers: {
@@ -205,6 +218,8 @@ function AdminPageContent() {
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Không thể tạo thành viên')
       console.error('Error creating team member:', err)
+    } finally {
+      setCreatingMember(false)
     }
   }
 
@@ -212,6 +227,7 @@ function AdminPageContent() {
     if (!editingMember) return
     
     try {
+      setUpdatingMember(true)
       const response = await fetch(`/api/team-members/${editingMember._id}`, {
         method: 'PUT',
         headers: {
@@ -236,6 +252,8 @@ function AdminPageContent() {
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Không thể cập nhật thành viên')
       console.error('Error updating team member:', err)
+    } finally {
+      setUpdatingMember(false)
     }
   }
 
@@ -243,6 +261,7 @@ function AdminPageContent() {
     if (!confirm('Bạn có chắc chắn muốn xóa thành viên này không?')) return
     
     try {
+      setDeletingMember(id)
       const response = await fetch(`/api/team-members/${id}`, {
         method: 'DELETE',
       })
@@ -260,6 +279,8 @@ function AdminPageContent() {
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Không thể xóa thành viên')
       console.error('Error deleting team member:', err)
+    } finally {
+      setDeletingMember(null)
     }
   }
 
@@ -320,6 +341,7 @@ function AdminPageContent() {
     }
 
     try {
+      setCreatingMeeting(true)
       const response = await fetch('/api/meeting-requests', {
         method: 'POST',
         headers: {
@@ -355,11 +377,14 @@ function AdminPageContent() {
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Không thể tạo lịch bí cảnh')
       console.error('Error creating meeting request:', err)
+    } finally {
+      setCreatingMeeting(false)
     }
   }
 
   const handleConfirmMeeting = async (meetingId: string) => {
     try {
+      setConfirmingMeeting(meetingId)
       const response = await fetch(`/api/meeting-requests/${meetingId}`, {
         method: 'PATCH',
         headers: {
@@ -428,6 +453,8 @@ function AdminPageContent() {
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Không thể xác nhận lịch bí cảnh')
       console.error('Error confirming meeting:', err)
+    } finally {
+      setConfirmingMeeting(null)
     }
   }
 
@@ -435,6 +462,7 @@ function AdminPageContent() {
     if (!confirm('Bạn có chắc chắn muốn hủy lịch bí cảnh này không?')) return
     
     try {
+      setCancelingMeeting(meetingId)
       const response = await fetch(`/api/meeting-requests/${meetingId}`, {
         method: 'PATCH',
         headers: {
@@ -457,6 +485,8 @@ function AdminPageContent() {
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Không thể hủy lịch bí cảnh')
       console.error('Error canceling meeting:', err)
+    } finally {
+      setCancelingMeeting(null)
     }
   }
 
@@ -464,6 +494,7 @@ function AdminPageContent() {
     if (!confirm('Bạn có chắc chắn muốn xóa vĩnh viễn lịch bí cảnh này không? Hành động này không thể hoàn tác.')) return
     
     try {
+      setDeletingMeeting(meetingId)
       const response = await fetch(`/api/meeting-requests/${meetingId}`, {
         method: 'DELETE',
       })
@@ -482,6 +513,8 @@ function AdminPageContent() {
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Không thể xóa lịch bí cảnh')
       console.error('Error deleting meeting:', err)
+    } finally {
+      setDeletingMeeting(null)
     }
   }
 
@@ -693,6 +726,7 @@ function AdminPageContent() {
     }
 
     try {
+      setUpdatingMeeting(true)
       const response = await fetch(`/api/meeting-requests/${editingMeetingId}`, {
         method: 'PUT',
         headers: {
@@ -735,6 +769,8 @@ function AdminPageContent() {
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Không thể cập nhật lịch bí cảnh')
       console.error('Error updating meeting request:', err)
+    } finally {
+      setUpdatingMeeting(false)
     }
   }
 
@@ -773,7 +809,8 @@ function AdminPageContent() {
 
   // Handle join request approval/rejection
   const handleJoinRequest = async (meetingId: string, discordUid: string, action: 'approve' | 'reject', reason?: string) => {
-    setProcessingRequest(discordUid)
+    const requestKey = `${meetingId}-${discordUid}-${action}`
+    setProcessingJoinRequest(requestKey)
     try {
       const response = await fetch(`/api/meeting-requests/${meetingId}/join-requests`, {
         method: 'PATCH',
@@ -800,7 +837,7 @@ function AdminPageContent() {
       console.error('Error processing join request:', error)
       alert('Có lỗi xảy ra khi xử lý yêu cầu tham gia')
     } finally {
-      setProcessingRequest(null)
+      setProcessingJoinRequest(null)
     }
   }
 
@@ -866,10 +903,7 @@ function AdminPageContent() {
 
             {/* Loading State */}
             {loading && (
-              <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                <p className="mt-2 text-gray-600">Đang tải thành viên...</p>
-              </div>
+              <CardSpinner text="Đang tải thành viên..." />
             )}
 
             {/* Error State */}
@@ -1166,7 +1200,9 @@ function AdminPageContent() {
                   <Button 
                     onClick={editingMeetingId ? handleUpdateMeeting : handleCreateMeeting} 
                     className={editingMeetingId ? "flex-1" : "w-full"}
+                    disabled={creatingMeeting || updatingMeeting}
                   >
+                    {(creatingMeeting || updatingMeeting) && <ButtonSpinner />}
                     {editingMeetingId ? 'Cập nhật lịch bí cảnh' : 'Tạo lịch bí cảnh'}
                   </Button>
                 </div>
@@ -1180,10 +1216,7 @@ function AdminPageContent() {
               </CardHeader>
               <CardContent>
                 {meetingLoading ? (
-                  <div className="text-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                    <p className="mt-2 text-gray-600">Đang tải lịch bí cảnh...</p>
-                  </div>
+                  <CardSpinner text="Đang tải lịch bí cảnh..." />
                 ) : meetingError ? (
                   <div className="text-center py-8">
                     <p className="text-red-600 mb-2">Lỗi khi tải lịch bí cảnh</p>
@@ -1213,7 +1246,9 @@ function AdminPageContent() {
                               <Button
                                 size="sm"
                                 onClick={() => handleConfirmMeeting(meeting._id)}
+                                disabled={confirmingMeeting === meeting._id}
                               >
+                                {confirmingMeeting === meeting._id && <ButtonSpinner />}
                                 Xác nhận
                               </Button>
                             )}
@@ -1222,7 +1257,9 @@ function AdminPageContent() {
                                 size="sm"
                                 variant="destructive"
                                 onClick={() => handleCancelMeeting(meeting._id)}
+                                disabled={cancelingMeeting === meeting._id}
                               >
+                                {cancelingMeeting === meeting._id && <ButtonSpinner />}
                                 Hủy
                               </Button>
                             )}
@@ -1245,8 +1282,13 @@ function AdminPageContent() {
                               size="sm"
                               variant="destructive"
                               onClick={() => handleDeleteMeeting(meeting._id)}
+                              disabled={deletingMeeting === meeting._id}
                             >
-                              <Trash2 className="h-3 w-3 mr-1" />
+                              {deletingMeeting === meeting._id ? (
+                                <ButtonSpinner />
+                              ) : (
+                                <Trash2 className="h-3 w-3 mr-1" />
+                              )}
                               Xóa
                             </Button>
                           </div>

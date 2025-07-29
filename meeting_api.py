@@ -22,42 +22,7 @@ class JoinMeetingResponse:
     new_member_created: bool = False
     error: Optional[str] = None
 
-@dataclass
-class ScoreModification:
-    """Score modification data"""
-    score_change: int
-    old_score: int
-    new_score: int
-    reason: str
-    processed_by: str
-    processed_at: str
 
-@dataclass
-class UserScoreDetail:
-    """Detailed user score information"""
-    discord_uid: str
-    name: str
-    score: int
-    total_meetings_joined: int
-    last_updated: str
-    modifications: List[ScoreModification]
-    team_member: Optional[Dict[str, Any]] = None
-
-@dataclass
-class ScoreModificationRequest:
-    """Request to modify user score"""
-    discord_uid: str
-    score_change: int
-    reason: str
-    processed_by: str = "system"
-
-@dataclass
-class ScoreModificationResponse:
-    """Response from score modification"""
-    success: bool
-    message: str
-    data: Optional[UserScoreDetail] = None
-    error: Optional[str] = None
 
 @dataclass
 class MeetingRequest:
@@ -207,38 +172,8 @@ class MeetingAPI:
         }
         return await self._make_request('POST', '/api/discord/dm', payload)
     
-    async def get_user_scores(self, leaderboard: bool = False, limit: Optional[int] = None) -> Dict[str, Any]:
-        """Get user scores or leaderboard"""
-        params = {}
-        if leaderboard:
-            params["leaderboard"] = "true"
-        if limit:
-            params["limit"] = str(limit)
-        
-        query_string = "&".join([f"{k}={v}" for k, v in params.items()])
-        endpoint = f'/api/user-scores?{query_string}' if query_string else '/api/user-scores'
-        return await self._make_request('GET', endpoint)
-    
-    async def get_user_score(self, member_id: str) -> Dict[str, Any]:
-        """Get a specific user score"""
-        return await self._make_request('GET', f'/api/user-scores/{member_id}')
-    
-    async def modify_user_score(self, discord_uid: str, score_change: int, reason: str, processed_by: str = "system") -> Dict[str, Any]:
-        """Modify (add/subtract) score for a specific Discord user"""
-        payload = {
-            "discordUid": discord_uid,
-            "scoreChange": score_change,
-            "reason": reason,
-            "processedBy": processed_by
-        }
-        return await self._make_request('POST', '/api/user-scores/modify', payload)
-    
-    async def get_user_score_by_discord_uid(self, discord_uid: str) -> Dict[str, Any]:
-        """Get user score by Discord UID"""
-        return await self._make_request('GET', f'/api/user-scores/modify?discordUid={discord_uid}')
-    
     async def select_hoster(self, meeting_id: str) -> Dict[str, Any]:
-        """Select a random hoster for a meeting with score-weighted selection"""
+        """Select a random hoster for a meeting"""
         return await self._make_request('POST', f'/api/meeting-requests/{meeting_id}/select-hoster')
     
     async def get_hoster(self, meeting_id: str) -> Dict[str, Any]:

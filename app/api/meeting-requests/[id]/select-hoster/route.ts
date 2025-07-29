@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import connectDB from '@/lib/mongodb'
 import MeetingRequest from '@/models/MeetingRequest'
-import UserScore from '@/models/UserScore'
 
 export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -46,40 +45,8 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       )
     }
 
-    // Get scores for all participants
-    const participantsWithScores = []
-    
-    for (const participant of participants) {
-      if (participant.memberId && participant.discordUid) {
-        try {
-          // Find user score
-          const userScore = await UserScore.findOne({ memberId: participant.memberId })
-          const score = userScore ? userScore.score : 100 // Default score if not found
-          
-          participantsWithScores.push({
-            ...participant.toObject(),
-            score: score
-          })
-        } catch (error) {
-          console.error(`Error getting score for ${participant.name}:`, error)
-          // Use default score if error
-          participantsWithScores.push({
-            ...participant.toObject(),
-            score: 100
-          })
-        }
-      }
-    }
-
-    if (participantsWithScores.length === 0) {
-      return NextResponse.json(
-        { success: false, error: 'No valid participants with scores found' },
-        { status: 400 }
-      )
-    }
-
-    // Score-weighted random selection
-    const selectedHoster = selectWeightedRandomHoster(participantsWithScores)
+    // Simple random selection
+    const selectedHoster = selectRandomHoster(participants)
     
     // Update meeting request with selected hoster
     meetingRequest.hoster = {
@@ -88,7 +55,6 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       discordUid: selectedHoster.discordUid,
       meetingRole: selectedHoster.meetingRole,
       meetingClass: selectedHoster.meetingClass,
-      score: selectedHoster.score,
       selectedAt: new Date()
     }
 
@@ -111,29 +77,11 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 }
 
 /**
- * Select a random hoster with score-weighted probability
- * Higher scores have higher chances of being selected
+ * Select a random hoster from participants
  */
-function selectWeightedRandomHoster(participants: any[]): any {
-  // Calculate total weight (sum of all scores)
-  const totalWeight = participants.reduce((sum, participant) => sum + participant.score, 0)
-  
-  // Generate random number between 0 and total weight
-  const random = Math.random() * totalWeight
-  
-  // Find the participant based on weighted random selection
-  let currentWeight = 0
-  
-  for (const participant of participants) {
-    currentWeight += participant.score
-    
-    if (random <= currentWeight) {
-      return participant
-    }
-  }
-  
-  // Fallback to last participant (shouldn't reach here)
-  return participants[participants.length - 1]
+function selectRandomHoster(participants: any[]): any {
+  const randomIndex = Math.floor(Math.random() * participants.length)
+  return participants[randomIndex]
 }
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {

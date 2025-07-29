@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import connectDB from '@/lib/mongodb'
 import MeetingRequest from '@/models/MeetingRequest'
 import TeamMember from '@/models/TeamMember'
-import UserScore from '@/models/UserScore'
 
 // Disable Next.js caching for this route
 export const dynamic = 'force-dynamic'

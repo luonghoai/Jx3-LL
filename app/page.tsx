@@ -47,7 +47,6 @@ interface Hoster {
   discordUid?: string
   meetingRole: string
   meetingClass: string
-  score: number
   selectedAt: string
 }
 
@@ -450,12 +449,6 @@ export default function HomePage() {
         <div className="px-4 pb-8">
           {/* Floating Action Buttons */}
           <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-2">
-            <Link href="/leaderboard">
-              <Button variant="outline" className="shadow-lg bg-white/10 backdrop-blur-sm border-white/20 text-white hover:bg-white/20">
-                <Trophy className="h-4 w-4 mr-2" />
-                Bảng Xếp Hạng
-              </Button>
-            </Link>
             <Link href="/login">
               <Button variant="outline" className="shadow-lg bg-white/10 backdrop-blur-sm border-white/20 text-white hover:bg-white/20">
                 <Settings className="h-4 w-4 mr-2" />
@@ -466,9 +459,9 @@ export default function HomePage() {
 
           {/* Participants Grid */}
           {loading ? (
-            <div className="max-w-7xl mx-auto">
-              <div className="flex-col gap-4 w-full flex items-center justify-center py-12">
-                <div className="w-16 h-16 border-4 text-green-400 text-2xl animate-spin border-gray-300 flex items-center justify-center border-t-green-400 rounded-full">
+            <div className="flex items-center justify-center min-h-[50vh]">
+              <div className="text-center">
+                <div className="w-16 h-16 border-4 text-green-400 text-2xl animate-spin border-gray-300 flex items-center justify-center border-t-green-400 rounded-full mx-auto mb-4">
                   <img 
                     src="/images/daithiet.webp" 
                     alt="Loading" 
