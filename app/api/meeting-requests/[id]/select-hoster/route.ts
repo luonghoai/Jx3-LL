@@ -7,6 +7,14 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     await connectDB()
     const meetingId = params.id
 
+    // Validate meeting ID format
+    if (!meetingId || meetingId.length !== 24) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid meeting ID format' },
+        { status: 400 }
+      )
+    }
+
     // Find the meeting request
     const meetingRequest = await MeetingRequest.findById(meetingId)
     
@@ -48,13 +56,20 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     // Simple random selection
     const selectedHoster = selectRandomHoster(participants)
     
+    if (!selectedHoster) {
+      return NextResponse.json(
+        { success: false, error: 'Failed to select hoster from participants' },
+        { status: 500 }
+      )
+    }
+    
     // Update meeting request with selected hoster
     meetingRequest.hoster = {
-      memberId: selectedHoster.memberId,
-      name: selectedHoster.name,
-      discordUid: selectedHoster.discordUid,
-      meetingRole: selectedHoster.meetingRole,
-      meetingClass: selectedHoster.meetingClass,
+      memberId: selectedHoster.memberId || '',
+      name: selectedHoster.name || '',
+      discordUid: selectedHoster.discordUid || '',
+      meetingRole: selectedHoster.meetingRole || '',
+      meetingClass: selectedHoster.meetingClass || '',
       selectedAt: new Date()
     }
 
@@ -80,14 +95,33 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
  * Select a random hoster from participants
  */
 function selectRandomHoster(participants: any[]): any {
+  if (!participants || participants.length === 0) {
+    return null
+  }
+  
   const randomIndex = Math.floor(Math.random() * participants.length)
-  return participants[randomIndex]
+  const selectedHoster = participants[randomIndex]
+  
+  // Validate that the selected hoster has required fields
+  if (!selectedHoster.memberId || !selectedHoster.name) {
+    return null
+  }
+  
+  return selectedHoster
 }
 
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     await connectDB()
     const meetingId = params.id
+
+    // Validate meeting ID format
+    if (!meetingId || meetingId.length !== 24) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid meeting ID format' },
+        { status: 400 }
+      )
+    }
 
     // Find the meeting request
     const meetingRequest = await MeetingRequest.findById(meetingId)
