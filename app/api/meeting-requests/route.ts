@@ -80,31 +80,6 @@ export async function POST(request: NextRequest) {
       position: guest.position ?? (participantsWithPositions.length + index)
     }))
 
-
-    // Select hoster from participants if available
-    let selectedHoster = null;
-    if (participantsWithPositions.length > 0) {
-      // Simple random selection logic (same as in select-hoster endpoint)
-      const selectRandomHoster = (participants: any[]): any | null => {
-        if (!participants || participants.length === 0) return null;
-        const randomIndex = Math.floor(Math.random() * participants.length);
-        const hoster = participants[randomIndex];
-        if (!hoster.memberId || !hoster.name) return null;
-        return hoster;
-      }
-      const hoster = selectRandomHoster(participantsWithPositions);
-      if (hoster) {
-        selectedHoster = {
-          memberId: hoster.memberId || '',
-          name: hoster.name || '',
-          discordUid: hoster.discordUid || '',
-          meetingRole: hoster.meetingRole || '',
-          meetingClass: hoster.meetingClass || '',
-          selectedAt: new Date()
-        };
-      }
-    }
-
     // Create new meeting request
     const meetingRequest = new MeetingRequest({
       title: body.title.trim(),
@@ -114,8 +89,7 @@ export async function POST(request: NextRequest) {
       status: body.status || 'draft',
       participants: participantsWithPositions,
       temporaryGuests: guestsWithPositions,
-      isActive: true,
-      hoster: selectedHoster
+      isActive: true
     })
     
     await meetingRequest.save()
